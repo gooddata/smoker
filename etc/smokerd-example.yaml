@@ -1,0 +1,111 @@
+---
+##
+# Full example configuration of smokerd
+# You can use it if you have GENCONFIG disabled = default
+# (so plugin.d, template.d, action.d directories will be ignored)
+#
+# Copyright (C) 2007-2013, GoodData(R) Corporation. All rights reserved
+##
+
+bind_host:   0.0.0.0
+bind_port:   8086
+
+pidfile:    /var/run/smokerd.pid
+
+# Daemon effective UID/GID (ID only)
+#uid:        0
+#gid:        0
+
+# You probably don't need these, because Smoker is using syslog
+# but they can be handy during debugging of daemon startup,
+# unhandled evil exceptions, etc.
+stdin:      /dev/null
+stdout:     /dev/null
+stderr:     /dev/null
+
+# Feel free to use a favicon
+favicon:    /usr/share/smokerd/favicon.ico
+
+# Smoke test checks to run
+plugins:
+    iTunesPlaying:
+        Interval:   60
+        Timeout:    5
+        Category:   music
+        Enabled:    True
+        Command:    /usr/bin/itunes_playing.sh
+        # Execute action on result
+        Action:     SendNSCA
+
+    Uptime:
+        Interval:   5
+        Timeout:    5
+        Category:   system
+        Enabled:    True
+        Command:    uptime
+
+    Memory:
+        Interval:   180
+        Timeout:    5
+        Category:   system
+        Enabled:    True
+        # Echo will return always 0, so plugin will be OK
+        # even if it isn't
+        Command:    echo "$(top -l 1 | awk '/PhysMem/';)"
+
+    Uname:
+        Interval:   30
+        Category:   system
+        Enabled:    True
+        # This Python module, class Plugin, method run()
+        # will be executed to get result
+        Module:     smoker.plugins.uname
+
+    # Inherits default parameters
+    ConnectorZendesk3:
+        Interval: 0
+        Template: JMXTest
+        Category: connectors
+        Enabled:  True
+        # Parameters used by JMXTest
+        JMXPort:  5015
+        JMXBean:  com.gooddata:name=SelfTest-connector
+        JMXRun:   executeTestsJSON
+
+# Actions to do on plugin's result
+actions:
+    RestartTomcat:
+        Command:    monit restart tomcat
+
+    SendNSCA:
+        Module:     smoker.plugins.nsca
+
+    PauseiTunes:
+        Command:    osascript -e 'tell application "iTunes"' -e "pause" -e "end tell"
+
+# Templates for plugins
+templates:
+    # Default template with options for all plugins
+    BasePlugin:
+        Interval: 5
+        Timeout:  30
+        # Alternative effective UID, works only when running under root
+        # good idea to run plugins with lower privileges
+        uid:      default
+        gid:      default
+        # History of results: no. of records to keep for each plugin
+        History:  10
+
+    # Template for JMX self-test check
+    JMXTest:
+        Interval: 60
+        Timeout:  10
+        # Parameters will be supplied in JSON on stdin
+        # or using Python format notation (formatted dictionary is escaped !)
+        Command:  jmxcheck.py --port %(JMXPort)s --bean %(JMXBean)s --run %(JMXRun)s
+        # Parser for Command output
+        # there's no way how to parse JSON in Python < 2.6
+        Parser:   smoker.plugins.jmxparser
+
+# Include another yaml config file
+# include: !include test.yaml
