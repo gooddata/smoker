@@ -11,6 +11,17 @@ Common use-cases:
 ![Smoking catepillar](http://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Alice_05a-1116x1492.jpg/672px-Alice_05a-1116x1492.jpg)
 
 ## Installation
+### Dependencies
+Smoker is compatible and tested with Python 2.6.6 and newer.
+It doesn't have much dependencies, follow instructions bellow to install them:
+
+With PIP:
+
+	pip install psutil yaml argparse simplejson
+
+Or install packages from your distribution repository.
+
+### Smoker
 With PIP:
 
 	pip install -e 'git://github.com/gooddata/smoker.git#egg=smoker'
@@ -44,6 +55,7 @@ Configuration can be done in two ways:
 ```
 
 #### Init script
+Distribution init script is written for RHEL 6.x, feel free to customize for your distribution and contribute.
 Following options can be overwritten in /etc/default/smokerd
 
 	PROG='smokerd'

@@ -27,7 +27,7 @@ params = {
     'author_email' : 'python@gooddata.com',
     'description' : 'GDC Smoker',
     'long_description' : 'GoodData Smoke testing daemon and client',
-    'requires' : ['yaml', 'argparse', 'simplejson'],
+    'requires' : ['yaml', 'argparse', 'simplejson', 'psutil'],
 }
 
 setup(**params)
