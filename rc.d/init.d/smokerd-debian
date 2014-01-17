@@ -1,0 +1,85 @@
+#!/bin/sh
+# Start/stop the Smoker Daemon.
+#
+### BEGIN INIT INFO
+# Provides:			 smokerd
+# Required-Start:	 $remote_fs $syslog $network $time
+# Required-Stop:	 $remote_fs $syslog $network $time
+# Default-Start:	 2 3 4 5
+# Default-Stop:
+# Short-Description: Smoke testing daemon
+### END INIT INFO
+
+DESC="smoker daemon"
+NAME=smokerd
+DAEMON=/usr/local/bin/smokerd.py
+PIDFILE=/var/run/smokerd.pid
+SCRIPTNAME=/etc/init.d/"$NAME"
+
+CONFDIR='/etc/smokerd'
+CONFIG="${CONFDIR}/smokerd.yaml"
+GENCONFIG=0
+SMOKERD_OPTIONS="-p ${PIDFILE} -v -c ${CONFIG}"
+
+test -x $DAEMON || exit 0
+
+. /lib/lsb/init-functions
+
+[ -r /etc/default/smokerd ] && . /etc/default/smokerd
+
+confgen() {
+	if [ $GENCONFIG -ne 1 ]; then
+		return 0
+	fi
+
+	cat $CONFDIR/common.yaml > $CONFIG || exit_error
+
+	dirs=('template' 'action' 'plugin')
+	for dir in ${dirs[*]}; do
+		echo -e "\n${dir}s:" >> $CONFIG
+
+		# Skip if directory doesn't contain YAML files
+		if [ `ls ${CONFDIR}/${dir}.d/*.yaml 2>/dev/null|wc -l` -eq 0 ]; then
+			continue
+		fi
+
+		for plugin in ${CONFDIR}/${dir}.d/*.yaml; do
+			name=`basename $plugin .yaml`
+
+			echo "    ${name}: !include ${dir}.d/${name}.yaml" >> $CONFIG
+		done
+	done
+}
+
+case "$1" in
+	start)
+		log_daemon_msg "Starting $DESC" "$NAME"
+		confgen
+		start_daemon -p $PIDFILE $DAEMON $SMOKERD_OPTIONS
+		log_end_msg $?
+		;;
+	stop)
+		log_daemon_msg "Stopping $DESC" "$NAME"
+		killproc -p $PIDFILE $DAEMON
+		RETVAL=$?
+		[ $RETVAL -eq 0 ] && [ -e "$PIDFILE" ] && rm -f $PIDFILE
+		log_end_msg $RETVAL
+		;;
+	restart)
+		log_daemon_msg "Restarting $DESC" "$NAME" 
+		$0 stop
+		$0 start
+		;;
+	reload|force-reload)
+		# We don't have reload yet, simply restart
+		$0 restart
+		;;
+	status)
+		status_of_proc -p $PIDFILE $DAEMON $NAME && exit 0 || exit $?
+		;;
+	*)
+		log_action_msg "Usage: ${SCRIPTNAME} {start|stop|status|restart|reload|force-reload}"
+		exit 2
+		;;
+esac
+exit 0
