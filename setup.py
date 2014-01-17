@@ -6,7 +6,7 @@ from setuptools import setup
 
 # Parameters for build
 params = {
-    'name' : 'smoker',
+    'name' : 'gdc-smoker',
     'version' : '1.0',
     'packages' : [
         'smoker',
