@@ -14,11 +14,11 @@
 . /lib/lsb/init-functions
 
 PROG='smokerd'
-BINARY='/usr/bin/smokerd.py'
+BINARY='/usr/local/bin/smokerd.py'
 PIDFILE='/var/run/smokerd.pid'
 LOCKFILE='/var/lock/subsys/smokerd'
 CONFDIR='/etc/smokerd'
-CONFIG="${CONFIGDIR}/smokerd.yaml"
+CONFIG="${CONFDIR}/smokerd.yaml"
 GENCONFIG=0
 SMOKERD_OPTIONS="-p ${PIDFILE} -v -c ${CONFIG}"
 
