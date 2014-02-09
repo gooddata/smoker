@@ -16,15 +16,19 @@ def main():
     parser.add_argument('-p', '--pidfile', dest='pidfile', default='/var/run/smokerd.pid', help="PID file to use (default /var/run/smokerd.pid)")
     parser.add_argument('-fg', '--foreground', dest='foreground', action='store_true', help="Don't fork into background")
     parser.add_argument('--stop', dest='stop', action='store_true', help="Stop currently running daemon")
+    parser.add_argument('--no-syslog', dest='no_syslog', action='store_true', help="Don't use syslog handler")
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help="Be verbose")
     parser.add_argument('-d', '--debug', dest='debug', action='store_true', help="Debug output")
     args = parser.parse_args()
 
+    logging_args = {}
     # Don't log into console if we are going to background
     if not args.foreground:
-        lg = smoker.logger.init(console=False)
-    else:
-        lg = smoker.logger.init()
+        logging_args['console'] = False
+    if args.no_syslog:
+        logging_args['syslog'] = False
+
+    lg = smoker.logger.init(**logging_args)
 
     if args.verbose:
         lg.setLevel(logging.INFO)

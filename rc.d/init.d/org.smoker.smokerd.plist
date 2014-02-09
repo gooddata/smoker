@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>Label</key>
+		<string>org.smoker.smokerd</string>
+
+		<!-- You need to fix program path first! -->
+		<key>ProgramArguments</key>
+		<array>
+			<string>/opt/local/Library/Frameworks/Python.framework/Versions/2.7/bin/smokerd.py</string>
+			<string>-fg</string>
+			<string>-v</string>
+			<string>--no-syslog</string>
+		</array>
+
+		<key>Listeners</key>
+		<dict>
+			<key>SockServiceName</key>
+			<string>8086</string>
+
+			<key>SockType</key>
+			<string>stream</string>
+		</dict>
+
+		<!-- Logging -->
+		<key>StandardOutPath</key>
+		<string>/var/log/smokerd-stdout.log</string>
+
+		<key>StandardErrorPath</key>
+		<string>/var/log/smokerd-stderr.log</string>
+
+		<key>EnableGlobbing</key>
+		<true/>
+
+		<key>RunAtLoad</key>
+		<true/>
+
+		<key>KeepAlive</key>
+		<true/>
+	</dict>
+</plist>
