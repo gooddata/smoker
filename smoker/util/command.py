@@ -13,6 +13,7 @@ import psutil
 import atexit
 import datetime
 import logging
+import time
 lg = logging.getLogger(__name__)
 
 def execute(command, timeout=None, **kwargs):
@@ -101,7 +102,39 @@ def _proc_cleanup(pid):
     :param pid: process id
     """
     if pid:
-        signal_ptree(pid, 9)
+        try:
+            process = psutil.Process(pid)
+        except psutil.NoSuchProcess:
+            return
+
+        signal_ptree(process)
+        if process.is_running():
+            # Still running - wait 1 second before sending SIGKILL
+            time.sleep(1)
+            signal_ptree(process, 9)
+
+def _register_cleanup(pid):
+    """
+    Register cleanup function for given process id
+
+    :param pid: process id
+    """
+    lg.debug("Registering cleanup for pid %s" % pid)
+    atexit.register(_proc_cleanup, pid)
+
+def _unregister_cleanup(pid):
+    """
+    Unregister cleanup function for given process id
+
+    :param pid: process id
+    """
+    lg.debug("Unregistering cleanup for pid %s" % pid)
+
+    # Newer atexit has unregister, but we want to be compatible
+    for handler in atexit._exithandlers:
+        (func, args, kwargs) = handler
+        if func == _proc_cleanup and args == (pid,):
+            atexit._exithandlers.remove(handler)
 
 class Command(object):
     """
@@ -161,8 +194,8 @@ class Command(object):
             """
             try:
                 self.process = subprocess.Popen(self.command, **self.kwargs)
-                # Register atexit cleanup function to avoid running processes after program exit
-                atexit.register(_proc_cleanup, self.process.pid)
+                # Register cleanup function to avoid running processes after program exit
+                _register_cleanup(self.process.pid)
                 self.stdout, self.stderr = self.process.communicate()
 
                 # Remove unwanted leading/trailing whitespaces from output
@@ -198,7 +231,11 @@ class Command(object):
 
                     if thread.is_alive():
                         # Thread still alive -> deadlock
+                        # Unregister cleanup function in case that process would die to avoid killing re-used PID
+                        _unregister_cleanup(self.process.pid)
                         raise ThreadDeadlock("Process %s deadlocked thread %s" % (self.process.pid, thread.name))
+                # Process is no running, unregister cleanup and raise Timeout exception
+                _unregister_cleanup(self.process.pid)
                 raise ExecutionTimeout("Execution timeout after %s seconds" % timeout)
         else:
             # No timeout applied.. only insane people should do this.
@@ -206,11 +243,15 @@ class Command(object):
 
         # Handle exception from thread
         if self._exception:
+            # It means that process is not running, so unregister cleanup and re-raise exception
+            _unregister_cleanup(self.process.pid)
             raise self._exception
 
         lg.debug("Command execution done: time=%s returncode=%s" %
                  ((datetime.datetime.now() - time_start).seconds, self.returncode))
 
+        # We are successfully done, unregister cleanup to avoid killing re-used PID uppon server shutdown
+        _unregister_cleanup(self.process.pid)
         return (self.stdout, self.stderr, self.returncode)
 
 ## Exceptions

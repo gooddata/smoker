@@ -329,7 +329,7 @@ class Plugin(threading.Thread, object):
                 raise
 
         # Schedule first plugin run
-        if self.params['Interval'] > 0:
+        if self.params['Interval']:
             self.schedule_run()
 
         # Run Thread constructor, we want to be daemonic thread
@@ -378,7 +378,7 @@ class Plugin(threading.Thread, object):
                 self.forced_result = self.get_last_result()
             else:
                 # Plugin run in interval
-                if self.params['Interval'] > 0:
+                if self.params['Interval']:
                     if datetime.datetime.now() >= self.next_run:
                         with semaphore:
                             self.run_plugin()
@@ -401,7 +401,7 @@ class Plugin(threading.Thread, object):
         elif now == True:
             self.next_run = datetime.datetime.now()
         else:
-            if self.params['Interval'] > 0:
+            if self.params['Interval']:
                 self.next_run = datetime.datetime.now() + datetime.timedelta(seconds=self.params['Interval'])
 
     def run_command(self, command, timeout=0):
@@ -423,7 +423,7 @@ class Plugin(threading.Thread, object):
             lg.exception(e)
             raise PluginExecutionError("Can't execute command %s: %s" % (command, e))
 
-        if returncode > 0:
+        if returncode:
             status = 'ERROR'
         else:
             status = 'OK'
