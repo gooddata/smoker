@@ -42,7 +42,7 @@ class Smokerd(object):
         # args have to be dictionary
         self.conf = kwargs
 
-        if not kwargs['config']:
+        if 'config' not in kwargs:
             lg.info("Config argument not submitted, default config file will be used!")
             self.conf['config'] = '/etc/smokerd/smokerd.yaml'
 
@@ -200,7 +200,7 @@ class Smokerd(object):
 
         # Unix double-fork magic
         pid = os.fork()
-        if pid > 0:
+        if pid:
             sys.exit(0)
 
         os.chdir('/')
@@ -208,7 +208,7 @@ class Smokerd(object):
         os.umask(0)
 
         pid = os.fork()
-        if pid > 0:
+        if pid:
             sys.exit(0)
 
         # Ensure that directories for stdout and stderr logging

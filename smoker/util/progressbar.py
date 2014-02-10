@@ -10,7 +10,7 @@ Using by with syntax is preferred, otherwise you have to call progress.stop() fo
 Typical usage (with pool of threads):
 
     with ProgressBar(len(pool)) as progress:
-        while progress.get_left() > 0:
+        while progress.get_left():
             done = 0
             for t in pool:
                 if not t.isAlive():
@@ -167,7 +167,7 @@ class ProgressBar(threading.Thread, object):
         """
         assert isinstance(pool, list), "Parameter pool must be list of Thread objects"
 
-        while self.get_left() > 0:
+        while self.get_left():
             done = 0
             for t in pool:
                 assert isinstance(t, threading.Thread),\

@@ -9,7 +9,7 @@ from setuptools import setup
 params = {
     # This package is named gdc-smoker on Pypi, use it on register or upload actions
     'name' : 'gdc-smoker' if len(sys.argv) > 1 and sys.argv[1] in ['register', 'upload'] else 'smoker',
-    'version' : '1.0.2',
+    'version' : '1.0.3',
     'packages' : [
         'smoker',
         'smoker.server',
@@ -48,7 +48,7 @@ params = {
     ],
     'platforms' : ['POSIX'],
     'provides' : 'smoker',
-    'requires' : ['yaml', 'argparse', 'simplejson', 'psutil'],
+    'requires' : ['PyYAML', 'argparse', 'simplejson', 'psutil'],
 }
 
 setup(**params)
