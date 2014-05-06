@@ -258,7 +258,7 @@ class Smokerd(object):
         exception - if True, raise on exception, otherwise just log it and pass
         """
         # Ignore if we are already stopping
-        if self.pluginmgr.stopping:
+        if self.pluginmgr and self.pluginmgr.stopping:
             return
 
         lg.info("Shutting down")
