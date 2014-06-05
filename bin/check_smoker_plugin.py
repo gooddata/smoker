@@ -25,6 +25,15 @@ parser.add_argument('-f', '--force', dest='force', action='store_true', help="Fo
 parser.add_argument('plugin', help="Plugin to check")
 args = parser.parse_args()
 
+def ParseIssue(plugin_result):
+    out = "smoke test: %s " % plugin_result['name']
+    for component in plugin_result['lastResult']['componentResults']:
+        if component['componentResult']['status'] != 'OK':
+            out += "%s: %s; " % ( component['componentResult']['name'], component['componentResult']['status'] )
+    if len(out) > 1024:
+        out = "smoke test: %s returns huge error output, see smoker logs for details" % plugin_result['name']
+    return out
+
 def main():
     client = Client(['localhost'])
     plugins = client.get_plugins([[args.plugin]])
@@ -45,17 +54,17 @@ def main():
             try:
                 nagios.exit_ok(plugin['lastResult']['messages']['ok'][0])
             except (KeyError, IndexError, TypeError):
-                nagios.exit_ok("smoke test succeeded at %s" % plugin['lastResult']['lastRun'])
+                nagios.exit_ok("smoke test %s succeeded at %s" % ( plugin['name'], plugin['lastResult']['lastRun']) )
         elif plugin['lastResult']['status'] == 'WARN':
             try:
                 nagios.exit_warning(plugin['lastResult']['messages']['warn'][0])
             except (KeyError, IndexError, TypeError):
-                nagios.exit_warning("smoke test returned warnings at %s" % plugin['lastResult']['lastRun'])
+                nagios.exit_warning(ParseIssue(plugin))
         elif plugin['lastResult']['status'] == 'ERROR':
             try:
                 nagios.exit_critical(plugin['lastResult']['messages']['error'][0])
             except (KeyError, IndexError, TypeError):
-                nagios.exit_critical("smoke test failed at %s" % plugin['lastResult']['lastRun'])
+                nagios.exit_critical(ParseIssue(plugin))
         else:
             nagios.exit_unknown("unknown status %s at %s" % (plugin['lastResult']['status'], plugin['lastResult']['lastRun']))
 
