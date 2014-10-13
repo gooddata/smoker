@@ -27,11 +27,13 @@ SMOKERD_OPTIONS="-p ${PIDFILE} -v -c ${CONFIG}"
 
 exit_error() {
 	failure
+	echo
+	[ ! -z "$1" ] && echo "$1" 1>&2
 	exit 1
 }
 
 confgen() {
-	if [ $GENCONFIG -ne 1 ]; then
+	if [ "$GENCONFIG" -ne 1 ]; then
 		return 0
 	fi
 
@@ -42,7 +44,7 @@ confgen() {
 		echo -e "\n${dir}s:" >> $CONFIG
 
 		# Skip if directory doesn't contain YAML files
-		if [ `ls ${CONFDIR}/${dir}.d/*.yaml 2>/dev/null|wc -l` -eq 0 ]; then
+		if [ "`ls ${CONFDIR}/${dir}.d/*.yaml 2>/dev/null|wc -l`" -eq 0 ]; then
 			continue
 		fi
 
@@ -60,36 +62,36 @@ start() {
 	umask 077
 
 	echo -n $"Starting smokerd: "
-	if [ -f $PIDFILE ]; then
-		# PID file already exists!
-		failure
-		echo
-		return 1
-	fi
+
+	[ -f "$PIDFILE" ] && exit_error "PID file $PIDFILE already exists!"
+	[ -f "$LOCKFILE" ] && exit_error "Subsys $LOCKFILE is locked!"
 
 	confgen
 	$BINARY $SMOKERD_OPTIONS
 	RETVAL=$?
 	if [ $RETVAL -eq 0 ]; then
+		touch $LOCKFILE
+		# Wait a second before it's loaded and check if it's still running
 		sleep 1
-		if [ `pgrep -f $BINARY` ]; then
+		if [ "`pgrep -f $BINARY`" ]; then
 			success
-			touch $LOCKFILE
+			echo
+			return 0
 		else
-			failure
+			rm -f $LOCKFILE
+			exit_error "Daemon initiation failed!"
 		fi
 	else
-		failure
+		exit_error
 	fi
-	echo
-	return $RETVAL
 }
+
 stop() {
 	echo -n $"Shutting down smokerd: "
-	if [ ! -f $PIDFILE ]; then
-		# PID file doesn't exist!
+	if [ ! -f "$PIDFILE" ]; then
 		failure
 		echo
+		echo "PID file $PIDFILE doesn't exist!" 1>&2
 		return 1
 	fi
 
@@ -108,22 +110,24 @@ stop() {
 		ps aux|grep `cat $PIDFILE 2>/dev/null || echo chuja12345`|grep -v grep 2>&1 >/dev/null
 		RETVAL=$?
 		if [ $RETVAL -eq 0 ]; then
-			failure
-			RETVAL=1
+			exit_error "Daemon still running after $time seconds, maybe deadlocked?"
 		else
-			success
 			rm -f $LOCKFILE
-			RETVAL=0
+			success
+			echo
+			return 0
 		fi
 	else
 		failure
+		echo
+		return $RETVAL
 	fi
-	echo
-	return $RETVAL
 }
+
 rhstatus() {
 	status -p "$PIDFILE" -l $PROG $BINARY
 }
+
 restart() {
 	stop
 	start
