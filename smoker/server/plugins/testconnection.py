@@ -5,7 +5,8 @@
 Try to connect to given set of host, port and report status.
 
 Parameters:
-    Connections - Dictionary of [host, port] dict to try to connect to, example [ ['icinga.mydomain',5556], ['myhost.mydomain',80 ] ]
+    Connections - Dictionary of [host, port] dict to try to connect to, example
+                  [ ['icinga.mydomain',5556], ['myhost.mydomain',80 ] ]
     Timeout - timeout for requests, default 10 seconds
 
 """
@@ -37,12 +38,14 @@ class Plugin(BasePlugin):
 
         # Defaults
         if not self.addresses and not isinstance(self.addresses, dict):
-            raise Exception('Parameter Connections have to be dictionary of (host, port) tuples')
+            raise Exception('Parameter Connections have to be dictionary of '
+                            '(host, port) tuples')
 
         for conn in self.addresses:
-            if not (isinstance(conn, tuple) or isinstance(conn, list)) and len(conn) != 2:
-                raise Exception("Every parameter has to be a [host, port] list")
-                break
+            if (not (isinstance(conn, tuple) or isinstance(conn, list)) and
+                    len(conn) != 2):
+                raise Exception(
+                    "Every parameter has to be a [host, port] list")
 
         threads = []
         for conn in self.addresses:
@@ -59,7 +62,7 @@ class Plugin(BasePlugin):
             status = "ERROR"
         self.result.add_component('Connection', status, error=err)
         self.result.set_status()
-    return self.result
+        return self.result
 
 
 class ConnectionCheck(threading.Thread):
@@ -80,11 +83,15 @@ class ConnectionCheck(threading.Thread):
             s.close()
             self.info.append("Host: %s" % self.address[0])
         except (socket.herror, socket.gaierror) as e:
-            self.err.append("Host: %s resolving error: %s" % (self.address[0], e))
+            self.err.append(
+                "Host: %s resolving error: %s" % (self.address[0], e))
         except socket.timeout as e:
-            self.err.append("Host: %s, port: %s connection timeout" % self.address)
+            self.err.append(
+                "Host: %s, port: %s connection timeout" % self.address)
         except socket.error as e:
-            self.err.append("Host: %s, port: %s, Socket error: %s" % (self.address[0], self.address[1], e))
+            self.err.append("Host: %s, port: %s, Socket error: %s" %
+                            (self.address[0], self.address[1], e))
         except Exception as e:
             lg.exception()
-            self.err.append("Host: %s, Unknown exception: %s" % (self.address[0], e))
+            self.err.append(
+                "Host: %s, Unknown exception: %s" % (self.address[0], e))
