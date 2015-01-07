@@ -2,25 +2,26 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
+import datetime
 import logging
-lg = logging.getLogger('smokerd.pluginmanager')
+import multiprocessing
+import os
+import re
+import simplejson
+import setproctitle
+import time
+import types
 
 from smoker.server.exceptions import *
 import smoker.util.command
 
-import os
-import datetime
-import time
-import threading
-import simplejson
-import re
-import types
+lg = logging.getLogger('smokerd.pluginmanager')
 
-# Initialize threading semamphore, by default limit by
+# Initialize multiprocessing semamphore, by default limit by
 # number of online CPUs + 2
 semaphore_count = int(os.sysconf('SC_NPROCESSORS_ONLN')) + 2
-lg.info("Plugins will run approximately at %s threads in parallel" % semaphore_count)
-semaphore = threading.Semaphore(semaphore_count)
+lg.info("Plugins will run approximately at %s parallel processes" % semaphore_count)
+semaphore = multiprocessing.Semaphore(semaphore_count)
 
 class PluginManager(object):
     """
@@ -81,7 +82,7 @@ class PluginManager(object):
             while plugins_left:
                 plugins_left = []
                 for name, plugin in self.plugins.iteritems():
-                    if plugin.isAlive():
+                    if plugin.is_alive():
                         plugins_left.append(name)
                 if plugins_left:
                     # Print info only if number of left plugins changed
@@ -147,7 +148,7 @@ class PluginManager(object):
             options['Action'] = self.get_action(options['Action'])
 
         params = dict(template, **options)
-        return Plugin(self, plugin, params)
+        return Plugin(plugin, params)
 
     def get_template(self, name):
         """
@@ -239,7 +240,7 @@ class PluginManager(object):
 
         # Force run for each plugin and clear forced_result
         for plugin in plugins_list:
-            plugin.force = True
+            plugin.forceFlag.set()
             plugin.forced_result = None
 
         return id
@@ -250,7 +251,7 @@ class PluginManager(object):
         """
         return self.processes[id]
 
-class Plugin(threading.Thread, object):
+class Plugin(multiprocessing.Process):
     """
     Object that represents single plugin
     """
@@ -270,21 +271,16 @@ class Plugin(threading.Thread, object):
         'Action'  : None,
     }
 
-    result = []
-
-    # Instance of PluginManager
-    pluginmgr = None
-
-    force = False
-    forced_result = None
-
-    next_run = False
-
-    def __init__(self, pluginmgr, name, params):
+    def __init__(self, name, params):
         """
         Plugin constructor
-         * load parameters and plugin name
-         * prepare Thread
+         * prepare the process
+
+        :param name: name of the plugin
+        :type name: string
+
+        :param params: keyword arguments
+        :type params: dict
         """
         assert isinstance(name, basestring)
         assert isinstance(params, dict)
@@ -302,13 +298,13 @@ class Plugin(threading.Thread, object):
             }
             self.params['Action'] = dict(action_default, **params['Action'])
 
-        # Set instance of PluginManager
-        self.pluginmgr = pluginmgr
+        # create the instances of the Queue and force flag
+        self.queue = multiprocessing.Queue()
+        self.forceFlag = multiprocessing.Event()
 
         # Set those variables or they will be
         # references, shared between plugins
-        self.result   = []
-        self.force    = False
+        self.result = []
         self.forced_result = None
         self.next_run = False
 
@@ -332,7 +328,7 @@ class Plugin(threading.Thread, object):
         if self.params['Interval']:
             self.schedule_run()
 
-        # Run Thread constructor, we want to be daemonic thread
+        # Run Process constructor, we want to be daemonic process
         super(Plugin, self).__init__()
         self.daemon = True
 
@@ -366,25 +362,28 @@ class Plugin(threading.Thread, object):
 
     def run(self):
         """
-        Run thread
+        Run process
         Check if plugin should be run and execute it
         """
-        while self.stopping is not True:
-            # Plugin run when forced
-            if self.force == True:
-                with semaphore:
-                    self.run_plugin()
-                self.force = False
-                self.forced_result = self.get_last_result()
-            else:
-                # Plugin run in interval
-                if self.params['Interval']:
-                    if datetime.datetime.now() >= self.next_run:
-                        with semaphore:
-                            self.run_plugin()
-            time.sleep(1)
+        setproctitle.setproctitle('smoker plugin %s' % self.name)
+        try:
+            while self.stopping is not True:
+                # Plugin run when forced
+                if self.forceFlag.is_set():
+                    with semaphore:
+                        self.run_plugin(force=True)
+                    self.forceFlag.clear()
+                else:
+                    # Plugin run in interval
+                    if self.params['Interval']:
+                        if datetime.datetime.now() >= self.next_run:
+                            with semaphore:
+                                self.run_plugin()
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
 
-        # Stop the thread
+        # Stop the process
         lg.info("Shutting down plugin %s" % self.name)
 
     def schedule_run(self, time=None, now=False):
@@ -513,6 +512,7 @@ class Plugin(threading.Thread, object):
             raise
 
         try:
+            # TODO why are we passing self to a BasePlugin constructor?
             plugin = plugin.Plugin(self, **kwargs)
         except Exception as e:
             lg.error("Plugin %s: can't initialize plugin module: %s" % (self.name, e))
@@ -528,9 +528,12 @@ class Plugin(threading.Thread, object):
 
         return result
 
-    def run_plugin(self):
+    def run_plugin(self, force=False):
         """
         Run plugin, save result and schedule next run
+
+        :param force: forced run
+        :type force: bool
         """
         # External command will be executed
         if self.params['Command']:
@@ -596,23 +599,20 @@ class Plugin(threading.Thread, object):
             # Add action result to plugin result
             result.set_action(action)
 
-        # Append to the results
+        result.set_forced(force)
+        # send to the daemon
         try:
-            self.result.append(result.get_result())
+            self.queue.put(result.get_result())
         except ValidationError as e:
             lg.error("Plugin %s: ValidationError: %s" % (self.name, e))
             result = Result()
             result.set_status('ERROR')
             result.add_error('ValidationError: %s' % e)
-            self.result.append(result.get_result())
+            result.set_forced(force)
+            self.queue.put(result.get_result())
 
         # Log result
         lg.info("Plugin %s result: %s" % (self.name, result.get_result()))
-
-        # Remove earliest result to keep only number
-        # of results by parameter
-        if len(self.result) > self.params['History']:
-            self.result.pop(0)
 
         # Finally schedule next run
         self.schedule_run()
@@ -623,6 +623,13 @@ class Plugin(threading.Thread, object):
         If dictionary=True, then return value will be always dict
         eg. for use like dict(self.params, **self.get_last_result(True))
         """
+        while not self.queue.empty():
+            self.result.append(self.queue.get())
+            # Remove earliest result to keep only number
+            # of results by parameter
+            if len(self.result) > self.params['History']:
+                self.result.pop(0)
+
         try:
             res = self.result[-1]
         except IndexError:
@@ -630,6 +637,9 @@ class Plugin(threading.Thread, object):
                 return {}
             else:
                 return None
+
+        if res and res['forced']:
+           self.forced_result = res
 
         return res
 
@@ -686,7 +696,6 @@ class Result(object):
     """
     Object that represents plugin result
     """
-    result = {}
     validated = False
 
     def __init__(self):
@@ -694,11 +703,12 @@ class Result(object):
         Default result values
         """
         self.result = {
-            'status' : None,
+            'status': None,
             'messages': None,
-            'lastRun'   : datetime.datetime.now().isoformat(),
-            'componentResults' : None,
-            'action' : None,
+            'lastRun': datetime.datetime.now().isoformat(),
+            'componentResults': None,
+            'action': None,
+            'forced': False
         }
 
     def set_status(self, status=None):
@@ -729,6 +739,9 @@ class Result(object):
             elif result['status'] == 'ERROR':
                 status = 'ERROR'
         return status
+
+    def set_forced(self, forced=True):
+        self.result['forced'] = forced
 
     def add_info(self, msg):
         """
