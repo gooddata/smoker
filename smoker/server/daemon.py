@@ -48,13 +48,6 @@ class Smokerd(object):
 
         self._load_config()
 
-        # Catch SIGINT and SIGTERM if supported
-        if hasattr(signal, 'SIGINT'):
-            signal.signal(signal.SIGINT, self._shutdown)
-
-        if hasattr(signal, 'SIGTERM'):
-            signal.signal(signal.SIGTERM, self._shutdown)
-
     def _yaml_include(self, loader, node):
         """
         Include another yaml file from main file
@@ -153,6 +146,13 @@ class Smokerd(object):
             lg.error("Can't start PluginManager")
             lg.exception(e)
             self._shutdown(exitcode=1)
+
+        # Catch SIGINT and SIGTERM if supported
+        if hasattr(signal, 'SIGINT'):
+            signal.signal(signal.SIGINT, self._shutdown)
+
+        if hasattr(signal, 'SIGTERM'):
+            signal.signal(signal.SIGTERM, self._shutdown)
 
         lg.info("Starting webserver on %(bind_host)s:%(bind_port)s" % self.conf)
         try:

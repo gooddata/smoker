@@ -630,6 +630,8 @@ class HTTPHandler(BaseHTTPRequestHandler, object):
 
         results = []
         for plugin in process['plugins']:
+            # get results to find out if the forced one is present
+            plugin.get_last_result()
             if not plugin.forced_result:
                 raise InProgress
             else:
