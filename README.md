@@ -75,7 +75,7 @@ Usage
 ### Smoker Daemon (smokerd)
 Configuration can be done in two different ways:
 
- * final configuration in single/multiple yaml files (if GENCONFIG option is 0, this is default), simply edit `/etc/smokerd/smokerd.yaml`
+ * final configuration in single/multiple yaml files (if GENCONFIG option is 0, this is default), simply create `/etc/smokerd/smokerd.yaml`
  * generated configuration from directories (eg. for easier Puppet deploy) by init script (see structure bellow)
 
 ```
@@ -120,7 +120,7 @@ When Smoker is started this way, it doesn't log into syslog. Standard and error 
 #### Manual start
 Use following command to start smokerd in foreground with verbose output:
 
-	/usr/local/bin/smokerd.py -v -fg
+	/usr/bin/smokerd.py -v -fg
 
 This is very good for testing and development purposees.
 
