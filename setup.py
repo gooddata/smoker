@@ -74,7 +74,7 @@ Common use-cases in short:
     ],
     'platforms' : ['POSIX'],
     'provides' : ['smoker'],
-    'install_requires' : ['PyYAML', 'argparse', 'simplejson', 'psutil'],
+    'install_requires' : ['PyYAML', 'argparse', 'simplejson', 'psutil', 'Flask-RESTful'],
 }
 
 setup(**params)

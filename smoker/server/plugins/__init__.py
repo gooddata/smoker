@@ -250,6 +250,13 @@ class PluginManager(object):
         """
         return self.processes[id]
 
+    def get_process_list(self):
+        """
+        Return all processes
+        """
+        return self.processes
+
+
 class Plugin(threading.Thread, object):
     """
     Object that represents single plugin
