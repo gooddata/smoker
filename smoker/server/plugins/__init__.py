@@ -74,6 +74,7 @@ class PluginManager(object):
         # Trigger stop of all plugins
         for name, plugin in self.plugins.iteritems():
             plugin.stop()
+            plugin.terminate()
 
         # Wait until all plugins are stopped
         if blocking:
@@ -84,6 +85,8 @@ class PluginManager(object):
                 for name, plugin in self.plugins.iteritems():
                     if plugin.is_alive():
                         plugins_left.append(name)
+                    else:
+                        plugin.join()
                 if plugins_left:
                     # Print info only if number of left plugins changed
                     if len(plugins_left) != plugins_left_cnt:
@@ -251,6 +254,13 @@ class PluginManager(object):
         """
         return self.processes[id]
 
+    def get_process_list(self):
+        """
+        Return all processes
+        """
+        return self.processes
+
+
 class Plugin(multiprocessing.Process):
     """
     Object that represents single plugin
@@ -365,7 +375,7 @@ class Plugin(multiprocessing.Process):
         Run process
         Check if plugin should be run and execute it
         """
-        setproctitle.setproctitle('smoker plugin %s' % self.name)
+        setproctitle.setproctitle('smokerd plugin %s' % self.name)
         try:
             while self.stopping is not True:
                 # Plugin run when forced
@@ -512,7 +522,6 @@ class Plugin(multiprocessing.Process):
             raise
 
         try:
-            # TODO why are we passing self to a BasePlugin constructor?
             plugin = plugin.Plugin(self, **kwargs)
         except Exception as e:
             lg.error("Plugin %s: can't initialize plugin module: %s" % (self.name, e))
@@ -638,7 +647,7 @@ class Plugin(multiprocessing.Process):
             else:
                 return None
 
-        if res and res['forced']:
+        if res and res['forced'] and not self.forceFlag.is_set():
            self.forced_result = res
 
         return res

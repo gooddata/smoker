@@ -6,7 +6,7 @@ import logging
 lg = logging.getLogger('smokerd.daemon')
 
 from smoker.server.plugins import PluginManager
-from smoker.server.httpserver import ThreadedHTTPServer, HTTPHandler
+from smoker.server.restserver import RestServer
 
 import yaml
 
@@ -16,7 +16,7 @@ import sys
 import os
 
 import signal
-import select
+import time
 
 class Smokerd(object):
     """
@@ -147,28 +147,26 @@ class Smokerd(object):
             lg.exception(e)
             self._shutdown(exitcode=1)
 
+        lg.info("Starting webserver on %(bind_host)s:%(bind_port)s" % self.conf)
+        try:
+            self.server = RestServer(self.conf['bind_host'], self.conf['bind_port'], self)
+            self.server.start()
+        except Exception as e:
+            lg.error("Can't start HTTP server: %s" % e)
+            lg.exception(e)
+            self._shutdown(exitcode=1)
+
         # Catch SIGINT and SIGTERM if supported
         if hasattr(signal, 'SIGINT'):
             signal.signal(signal.SIGINT, self._shutdown)
 
         if hasattr(signal, 'SIGTERM'):
             signal.signal(signal.SIGTERM, self._shutdown)
+        # API server loop now runs in a separate process and we don't want
+        # to terminate to keep an instance of pluginmanager
+        while True:
+            time.sleep(1)
 
-        lg.info("Starting webserver on %(bind_host)s:%(bind_port)s" % self.conf)
-        try:
-            self.server = ThreadedHTTPServer((self.conf['bind_host'], self.conf['bind_port']), HTTPHandler, self)
-            try:
-                self.server.serve_forever()
-            except select.error as e:
-                # Suppress exception during shutdown
-                # (4, 'Interrupted system call')
-                pass
-        except KeyboardInterrupt:
-            lg.info("Interrupted")
-        except Exception as e:
-            lg.error("Can't start HTTP server: %s" % e)
-            lg.exception(e)
-            self._shutdown(exitcode=1)
 
     def stop(self):
         """
@@ -265,7 +263,8 @@ class Smokerd(object):
         try:
             # Shutdown webserver
             if self.server:
-                self.server.socket.close()
+                self.server.terminate()
+                self.server.join()
 
             # Shutdown pluginmanager and all plugins
             if self.pluginmgr:

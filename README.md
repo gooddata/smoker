@@ -51,7 +51,7 @@ It doesn't have much dependencies, follow instructions bellow to install them:
 
 With PIP:
 
-	pip install psutil PyAML argparse simplejson setproctitle
+	pip install psutil PyAML argparse simplejson setproctitle Flask-RESTful
 
 Or install packages from your distribution repository.
 
