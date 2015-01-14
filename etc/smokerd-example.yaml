@@ -59,7 +59,7 @@ plugins:
         Enabled:    True
         # This Python module, class Plugin, method run()
         # will be executed to get result
-        Module:     smoker.plugins.uname
+        Module:     smoker.server.plugins.uname
 
     # Inherits default parameters
     ConnectorZendesk3:

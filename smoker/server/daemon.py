@@ -6,7 +6,7 @@ import logging
 lg = logging.getLogger('smokerd.daemon')
 
 from smoker.server.plugins import PluginManager
-from smoker.server.httpserver import ThreadedHTTPServer, HTTPHandler
+from smoker.server.restserver import RestServer
 
 import yaml
 
@@ -156,13 +156,8 @@ class Smokerd(object):
 
         lg.info("Starting webserver on %(bind_host)s:%(bind_port)s" % self.conf)
         try:
-            self.server = ThreadedHTTPServer((self.conf['bind_host'], self.conf['bind_port']), HTTPHandler, self)
-            try:
-                self.server.serve_forever()
-            except select.error as e:
-                # Suppress exception during shutdown
-                # (4, 'Interrupted system call')
-                pass
+            self.server = RestServer(self.conf['bind_host'], self.conf['bind_port'], self)
+            self.server.run()
         except KeyboardInterrupt:
             lg.info("Interrupted")
         except Exception as e:
@@ -263,10 +258,6 @@ class Smokerd(object):
 
         lg.info("Shutting down")
         try:
-            # Shutdown webserver
-            if self.server:
-                self.server.socket.close()
-
             # Shutdown pluginmanager and all plugins
             if self.pluginmgr:
                 self.pluginmgr.stop()
