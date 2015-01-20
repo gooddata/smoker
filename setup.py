@@ -16,6 +16,7 @@ params = {
         'smoker.server.plugins',
         'smoker.client',
         'smoker.client.out_junit',
+        'smoker.client.plugins',
         'smoker.logger',
         'smoker.util'
         ],
