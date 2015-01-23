@@ -18,6 +18,7 @@ smoker.logger.init(syslog=False)
 lg = logging.getLogger('smokercli')
 
 from smoker.util.tap import TapTest, Tap
+from smoker.client.out_junit import plugins_to_xml
 
 import sys
 import simplejson
@@ -75,11 +76,12 @@ def main():
 
     # Output switchers
     group_output = parser.add_argument_group('Output switchers')
-    group_output.add_argument('-o', '--pretty', dest='pretty', default='normal', help="Output format: minimal / normal / long / full / raw / json / tap")
+    group_output.add_argument('-o', '--pretty', dest='pretty', default='normal', help="Output format: minimal / normal / long / full / raw / json / tap / xml")
     group_output.add_argument('--no-colors', dest='no_colors', action='store_true', help="Don't use colors in output")
     group_output.add_argument('--no-progress', dest='no_progress', action='store_true', help="Don't show progress bar")
     group_output.add_argument('-v', '--verbose', dest='verbose', action='store_true', help="Be verbose")
     group_output.add_argument('-d', '--debug', dest='debug', action='store_true', help="Debug output")
+    group_output.add_argument('--junit-config-file', dest='junit_config_file', help="Name of configuration file for junit xml formatter")
 
     args = parser.parse_args()
 
@@ -267,7 +269,7 @@ def main():
 
         format_plugin_run = '  Last run: {lastResult[lastRun]!s}\n  Next run: {nextRun!s}'
         format_plugin_param = '  {key:<10} {value}'
-    elif args.pretty in ['raw', 'json', 'tap']:
+    elif args.pretty in ['raw', 'json', 'tap', 'xml']:
         # Raw and special outputs doesn't need formatting
         pass
     else:
@@ -387,6 +389,10 @@ def main():
         # Convert mixed string into ascii to workaround UnicodeEncodeError
         # shouldn't be needed in Python 3
         print dump.encode('ascii', 'ignore')
+        sys.exit(0)
+    elif args.pretty == 'xml':
+        dump = plugins_to_xml(plugins, args.junit_config_file)
+        print dump
         sys.exit(0)
 
     # Print result

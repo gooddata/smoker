@@ -14,7 +14,7 @@
 . /lib/lsb/init-functions
 
 PROG='smokerd'
-BINARY='/usr/local/bin/smokerd.py'
+BINARY='/usr/bin/smokerd.py'
 PIDFILE='/var/run/smokerd.pid'
 LOCKFILE='/var/lock/subsys/smokerd'
 CONFDIR='/etc/smokerd'
