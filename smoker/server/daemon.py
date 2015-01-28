@@ -43,6 +43,8 @@ class Smokerd(object):
             lg.info("Config argument not submitted, default config file will be used!")
             self.conf['config'] = '/etc/smokerd/smokerd.yaml'
 
+        self.conf_dirs = [os.path.dirname(self.conf['config'])]
+
         self._load_config()
 
     def _yaml_include(self, loader, node):
@@ -50,7 +52,14 @@ class Smokerd(object):
         Include another yaml file from main file
         This is usually done by registering !include tag
         """
-        filepath = "%s/%s" % (os.path.dirname(self.conf['config']), node.value)
+        filepath = node.value
+        if not os.path.exists(filepath):
+            for dir in self.conf_dirs:
+                filepath = os.path.join(dir, node.value)
+                if os.path.exists(filepath):
+                    break
+
+        self.conf_dirs.append(os.path.dirname(filepath))
         try:
             with open(filepath, 'r') as inputfile:
                 return yaml.load(inputfile)

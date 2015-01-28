@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
+import os
 import sys
 from setuptools import setup
 
@@ -78,5 +79,71 @@ Common use-cases in short:
     'provides' : ['smoker'],
     'install_requires' : ['PyYAML', 'argparse', 'simplejson', 'psutil', 'setproctitle', 'Flask-RESTful'],
 }
+
+# Get current branch
+branch = os.getenv('GIT_BRANCH')
+if not branch:
+    branch = os.popen(
+        'git branch|grep -v "no branch"|grep \*|sed s,\*\ ,,g').read().strip()
+
+    if not branch:
+        branch = 'master'
+else:
+    branch = branch.replace('origin/', '')
+
+# Get git revision hash
+revision = os.popen('git rev-parse --short HEAD').read().strip()
+
+if not revision:
+    revision = '0'
+
+# Get build number
+build = os.getenv('BUILD_NUMBER')
+if not build:
+    build = '1'
+
+# Options for installing data_files
+# Good to set in case you don't want to make RPM,
+# but just install on your workstation by python setup.py install
+PREFIX = '/usr'
+CONFIGDIR = '/etc/smokerd'
+INITDIR = '/etc/rc.d/init.d'
+
+try:
+    action = sys.argv[1]
+except IndexError:
+    action = None
+
+if action == 'clean':
+    # Remove MANIFEST file
+    print "Cleaning MANIFEST.."
+    try:
+        os.unlink('MANIFEST')
+    except OSError as e:
+        if e.errno == 2:
+            pass
+        else:
+            raise
+
+    # Remove dist and build directories
+    for dir in ['dist', 'build']:
+        print "Cleaning %s.." % dir
+        for root, dirs, files in os.walk(dir, topdown=False):
+            for name in files:
+                os.remove(os.path.join(root, name))
+            for name in dirs:
+                os.rmdir(os.path.join(root, name))
+        try:
+            os.rmdir(dir)
+        except OSError as e:
+            if e.errno == 2:
+                pass
+            else:
+                raise
+elif action == 'bdist_rpm':
+    # Set release number
+    sys.argv.append('--release=1.%s.%s' % (build, revision))
+    # Require same version of gdc-python-common package
+    sys.argv.append('--requires=python-argparse python-simplejson python-flask')
 
 setup(**params)
