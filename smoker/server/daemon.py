@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
+import glob
 import logging
 import os
 import signal
@@ -67,21 +68,43 @@ class Smokerd(object):
             lg.error("Can't include config file %s: %s" % (filepath, e))
             raise
 
+    def _yaml_include_dir(self, loader, node):
+        """
+        Include another yaml file from main file
+        This is usually done by registering !include tag
+        """
+        if not os.path.exists(node.value):
+            return
+
+        yamls = glob.glob(os.path.join(node.value, '*.yaml'))
+        if not yamls:
+            return
+
+        content = '\n'
+
+        for file in yamls:
+            plugin, _ = os.path.splitext(os.path.basename(file))
+            content += '    %s: !include %s\n' % (plugin, file)
+
+        return yaml.load(content)
+
     def _load_config(self):
         """
         Load specified config file
         """
         try:
-            fp = open(self.conf['config'], 'r')
+            with open(self.conf['config'], 'r') as fp:
+                config = fp.read()
         except IOError as e:
             lg.error("Can't read config file %s: %s" % (self.conf['config'], e))
             raise
 
-        # Register include constructor
+        # Register include constructors
+        yaml.add_constructor('!include_dir', self._yaml_include_dir)
         yaml.add_constructor('!include', self._yaml_include)
 
         try:
-            conf = yaml.load(fp)
+            conf = yaml.load(config)
         except Exception as e:
             lg.error("Can't parse config file %s: %s" % (self.conf['config'], e))
             raise

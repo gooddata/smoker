@@ -1,4 +1,4 @@
-# Example configuration file for the smoker client
+# Example configuration file for the smoker client (/etc/smokercli.yaml)
 # plugin paths: Python modules containing the host discovery plugins. It has to
 #               be valid python module path.
 

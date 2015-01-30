@@ -32,30 +32,6 @@ exit_error() {
 	exit 1
 }
 
-confgen() {
-	if [ "$GENCONFIG" -ne 1 ]; then
-		return 0
-	fi
-
-	cat $CONFDIR/common.yaml > $CONFIG || exit_error
-
-	dirs=('template' 'action' 'plugin')
-	for dir in ${dirs[*]}; do
-		echo -e "\n${dir}s:" >> $CONFIG
-
-		# Skip if directory doesn't contain YAML files
-		if [ "`ls ${CONFDIR}/${dir}.d/*.yaml 2>/dev/null|wc -l`" -eq 0 ]; then
-			continue
-		fi
-
-		for plugin in ${CONFDIR}/${dir}.d/*.yaml; do
-			name=`basename $plugin .yaml`
-
-			echo "    ${name}: !include ${dir}.d/${name}.yaml" >> $CONFIG
-		done
-	done
-}
-
 start() {
 	[ -x $BINARY ] || exit 5
 
@@ -66,7 +42,6 @@ start() {
 	[ -f "$PIDFILE" ] && exit_error "PID file $PIDFILE already exists!"
 	[ -f "$LOCKFILE" ] && exit_error "Subsys $LOCKFILE is locked!"
 
-	confgen
 	$BINARY $SMOKERD_OPTIONS
 	RETVAL=$?
 	if [ $RETVAL -eq 0 ]; then

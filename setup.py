@@ -6,6 +6,9 @@ import os
 import sys
 from setuptools import setup
 
+CONFIGDIR = '/etc/smokerd'
+INITDIR = '/etc/rc.d/init.d'
+
 # Parameters for build
 params = {
     # This package is named gdc-smoker on Pypi, use it on register or upload actions
@@ -78,6 +81,10 @@ Common use-cases in short:
     'platforms' : ['POSIX'],
     'provides' : ['smoker'],
     'install_requires' : ['PyYAML', 'argparse', 'simplejson', 'psutil', 'setproctitle', 'Flask-RESTful'],
+    'data_files': [
+        (INITDIR, ['rc.d/init.d/smokerd']),
+        (CONFIGDIR, ['etc/smokerd-example.yaml', 'etc/smokercli-example.yaml'])
+    ]
 }
 
 # Get current branch
@@ -101,13 +108,6 @@ if not revision:
 build = os.getenv('BUILD_NUMBER')
 if not build:
     build = '1'
-
-# Options for installing data_files
-# Good to set in case you don't want to make RPM,
-# but just install on your workstation by python setup.py install
-PREFIX = '/usr'
-CONFIGDIR = '/etc/smokerd'
-INITDIR = '/etc/rc.d/init.d'
 
 try:
     action = sys.argv[1]
@@ -144,6 +144,8 @@ elif action == 'bdist_rpm':
     # Set release number
     sys.argv.append('--release=1.%s.%s' % (build, revision))
     # Require same version of gdc-python-common package
-    sys.argv.append('--requires=python-argparse python-simplejson python-flask')
+    sys.argv.append(
+        '--requires=python-argparse python-simplejson python-setproctitle '
+        'python-flask-restful')
 
 setup(**params)
