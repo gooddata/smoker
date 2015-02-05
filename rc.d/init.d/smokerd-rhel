@@ -73,7 +73,7 @@ start() {
 		touch $LOCKFILE
 		# Wait a second before it's loaded and check if it's still running
 		sleep 1
-		if [ "`pgrep -f $BINARY`" ]; then
+		if [ "`pgrep -f $PROG`" ]; then
 			success
 			echo
 			return 0

@@ -7,6 +7,7 @@ import logging
 import multiprocessing
 import os
 import re
+import signal
 import simplejson
 import setproctitle
 import time
@@ -22,6 +23,11 @@ lg = logging.getLogger('smokerd.pluginmanager')
 semaphore_count = int(os.sysconf('SC_NPROCESSORS_ONLN')) + 2
 lg.info("Plugins will run approximately at %s parallel processes" % semaphore_count)
 semaphore = multiprocessing.Semaphore(semaphore_count)
+
+
+def alarm_handler(signum, frame):
+    raise PluginExecutionTimeout
+
 
 class PluginManager(object):
     """
@@ -152,6 +158,14 @@ class PluginManager(object):
 
         params = dict(template, **options)
         return Plugin(plugin, params)
+
+    def restart_plugin(self, name):
+        lg.info("Restarting plugin %s" % name)
+        self.plugins[name].join()
+
+        self.plugins[name] = self.load_plugin(name, self.conf_plugins[name])
+        self.plugins[name].start()
+
 
     def get_template(self, name):
         """
@@ -528,13 +542,24 @@ class Plugin(multiprocessing.Process):
             lg.exception(e)
             raise
 
+        signal.signal(signal.SIGALRM, alarm_handler)
+        if 'timeout' not in kwargs:
+            kwargs['timeout'] = self.get_param('Timeout', default=120)
+
         try:
+            signal.alarm(kwargs['timeout'])
             result = plugin.run()
+        except PluginExecutionTimeout:
+            result = Result()
+            result.set_status('ERROR')
+            result.add_error('Plugin execution exceeded timeout %d seconds' %
+                             kwargs['timeout'])
         except Exception as e:
             lg.error("Plugin %s: module execution failed: %s" % (self.name, e))
             lg.exception(e)
             raise
 
+        signal.alarm(0)
         return result
 
     def run_plugin(self, force=False):
