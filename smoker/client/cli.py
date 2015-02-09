@@ -9,20 +9,23 @@ See pydoc for command line tool smoker.py
 """
 
 import argparse
+import datetime
+import glob
 import logging
+import os
+import simplejson
+import sys
+import yaml
 
 from smoker.client import Client
 import smoker.logger
+from smoker.client.out_junit import plugins_to_xml
+from smoker.util.tap import TapTest, Tap
+
 
 smoker.logger.init(syslog=False)
 lg = logging.getLogger('smokercli')
 
-from smoker.util.tap import TapTest, Tap
-from smoker.client.out_junit import plugins_to_xml
-
-import sys
-import simplejson
-import datetime
 
 COLORS = {
     'default' : '\033[0;0m',
@@ -35,6 +38,117 @@ COLORS = {
     'cyan' : '\033[1;36m',
     'gray' : '\033[0;37m',
 }
+
+
+CONFIG_FILE = '/etc/smokercli.yaml'
+
+
+def _get_plugins():
+    """
+    Get list of available host discovery plugin module names
+    """
+
+    plugins = []
+    conf_file = os.path.expanduser('~/.smokercli.yaml')
+
+    if not os.path.exists(conf_file):
+        conf_file = CONFIG_FILE
+
+    if not os.path.exists(conf_file):
+        return plugins
+
+    with open(conf_file) as f:
+        config = yaml.safe_load(f)
+
+    if config and 'plugin_paths' in config:
+        paths = config['plugin_paths']
+    else:
+        raise Exception('Invalid config file')
+
+
+    for path in paths:
+        try:
+            module = __import__(path)
+        except ImportError:
+            raise Exception('Invalid config file')
+
+        toplevel = os.path.dirname(module.__file__)
+        submodule = '/'.join(path.split('.')[1:])
+        plugin_dir = os.path.join(toplevel, submodule, '*.py')
+        modules = [os.path.basename(name)[:-3] for name in
+                   glob.glob(plugin_dir)]
+        modules.remove('__init__')
+        plugins += ['%s.%s' % (path, name) for name in modules]
+
+    return plugins
+
+
+def _get_plugin_arguments(name):
+    """
+    Get list of host discovery plugin specific cmdline arguments
+
+    :param name: plugin module name
+    """
+    try:
+        plugin = __import__(name, globals(), locals(), ['HostDiscoveryPlugin'])
+    except ImportError as e:
+        lg.error("Can't load module %s: %s" % (name, e))
+        raise
+    return plugin.HostDiscoveryPlugin.arguments
+
+
+def _add_plugin_arguments(parser):
+    """
+    Add host discovery plugin specific options to the cmdline argument parser
+
+    :param parser: argparse.ArgumentParser instance
+    """
+
+    plugins = _get_plugins()
+    if not plugins:
+        return
+    argument_group = parser.add_argument_group('Plugin arguments')
+
+    for plugin in plugins:
+        args = _get_plugin_arguments(plugin)
+        for argument in args:
+            argument_group.add_argument(*argument.args, **argument.kwargs)
+
+
+def _run_discovery_plugin(name, args):
+    """
+    Run the host discovery plugin
+    :param name: plugin module name
+    :param args: attribute namespace
+    :return: discovered hosts list
+    """
+    try:
+        this_plugin = __import__(name, globals(), locals(),
+                                 ['HostDiscoveryPlugin'])
+    except ImportError as e:
+        lg.error("Can't load module %s: %s" % (name, e))
+        raise
+
+    plugin=this_plugin.HostDiscoveryPlugin()
+    return plugin.get_hosts(args)
+
+
+def _host_discovery(args):
+    """
+    Run all the discovery plugins
+
+    :param args: attribute namespace
+    :return: discovered hosts list
+    """
+    discovered = []
+
+    for plugin in _get_plugins():
+        hosts = _run_discovery_plugin(plugin, args)
+        if hosts:
+            discovered += hosts
+
+    return discovered
+
 
 def main():
     """
@@ -50,7 +164,7 @@ def main():
 
     # Host arguments
     group_main = parser.add_argument_group('Target host switchers')
-    group_main.add_argument('-s', '--hosts', dest='hosts', nargs='+', default=['localhost'], help="Hosts with running smokerd (default localhost)")
+    group_main.add_argument('-s', '--hosts', dest='hosts', nargs='+', help="Hosts with running smokerd (default localhost)")
 
     # Filtering options
     # List of plugins
@@ -83,6 +197,7 @@ def main():
     group_output.add_argument('-d', '--debug', dest='debug', action='store_true', help="Debug output")
     group_output.add_argument('--junit-config-file', dest='junit_config_file', help="Name of configuration file for junit xml formatter")
 
+    _add_plugin_arguments(parser)
     args = parser.parse_args()
 
     # Set log level and set args.no_progress option
@@ -336,8 +451,17 @@ def main():
     # Add status filter
     filters.append(('status', states))
 
+    hosts = ['localhost']
+    discovered_hosts = _host_discovery(args)
+    if args.hosts:
+        hosts = args.hosts
+        if discovered_hosts:
+            hosts += discovered_hosts
+    elif discovered_hosts:
+        hosts = discovered_hosts
+
     # Initialize Client
-    client = Client(args.hosts)
+    client = Client(hosts)
     plugins = client.get_plugins(filters, filters_negative=args.exclude, exclude_plugins=args.exclude_plugins)
 
     # No plugins found
