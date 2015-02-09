@@ -3,20 +3,17 @@
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
 import logging
-lg = logging.getLogger('smokerd.daemon')
+import os
+import signal
+import sys
+import time
+import yaml
 
 from smoker.server.plugins import PluginManager
 from smoker.server.restserver import RestServer
 
-import yaml
+lg = logging.getLogger('smokerd.daemon')
 
-import threading
-
-import sys
-import os
-
-import signal
-import time
 
 class Smokerd(object):
     """
@@ -164,9 +161,32 @@ class Smokerd(object):
             signal.signal(signal.SIGTERM, self._shutdown)
         # API server loop now runs in a separate process and we don't want
         # to terminate to keep an instance of pluginmanager
-        while True:
-            time.sleep(1)
 
+        self._watchdog()
+
+    def _watchdog(self):
+        lg.debug("Starting the smoker watchdog")
+
+        while True:
+            if not self.server.is_alive():
+                lg.error("REST API server is dead")
+                self._restart_api_server()
+                lg.info("restarted the REST API server")
+
+            for plugin in self.pluginmgr.plugins.values():
+                if not plugin.is_alive():
+                    lg.error("Plugin %s is dead" % plugin.name)
+                    self.pluginmgr.restart_plugin(plugin.name)
+                    # need to restart the REST server so it has reference to
+                    # the new plugin instance
+                    self._restart_api_server()
+            time.sleep(10)
+
+    def _restart_api_server(self):
+        self.server.terminate()
+        self.server.join()
+        self.server = RestServer(self.conf['bind_host'], self.conf['bind_port'], self)
+        self.server.start()
 
     def stop(self):
         """
@@ -269,14 +289,6 @@ class Smokerd(object):
             # Shutdown pluginmanager and all plugins
             if self.pluginmgr:
                 self.pluginmgr.stop()
-
-            # Kill all running threads that has left (there shouldn't be any)
-            if threading.activeCount() > 1:
-                lg.info("Killing %s active threads" % (threading.activeCount() - 1))
-                for t in threading.enumerate():
-                    if t.getName() == 'MainThread':
-                        continue
-                    t._Thread__stop()
 
             # Remove PID file if exists
             if os.path.isfile(self.conf['pidfile']):
