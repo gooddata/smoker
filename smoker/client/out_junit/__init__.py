@@ -19,14 +19,14 @@ So sorting or structuring testsuites/testcases is futile effort.
 Important is to properly set 'classname' and 'name' attributes for testcase elements.
 '''
 
-
-import yaml
-import collections
 from cgi import escape
+import collections
+import yaml
 
-import rows
-from  xml_builder import XmlBuilder
 import default_config
+import rows
+from xml_builder import XmlBuilder
+
 
 def plugins_to_xml(dict_data,
                    yaml_filename=None,
@@ -36,7 +36,7 @@ def plugins_to_xml(dict_data,
                    ts_attr='HtmlTestSuiteAttr',
                    tc_attr='HtmlTestCaseAttr',
                    tc_elem='HtmlTestCaseElem'):
-    '''
+    """
     Provided data (from plugins dictionary) and walking template, get all valid items and convert it to jUnit xml representation.
 
     Function have sane defaults (depends on calee opinion):
@@ -51,9 +51,9 @@ def plugins_to_xml(dict_data,
 
     :rval: string
     :return: returns xml structure (testsuites corresponds to nodes, testcases to plugin)
-    '''
+    """
     def apply(inst, custom_dict=None, **kwargs):
-        '''
+        """
         Dynamically applies value of value as new value.
 
         >>> inst
@@ -64,7 +64,7 @@ def plugins_to_xml(dict_data,
         { 'name': 'node', 'classname': 'ClassName'}
         >>> apply(inst, custom_dict=custom_dict)
         { 'name': 'sgt-c3', 'classname': 'stg-c3.alog'}
-        '''
+        """
         applied_args = {}
         if custom_dict:
             for k, v in custom_dict.iteritems():
