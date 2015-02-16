@@ -38,6 +38,7 @@ HtmlTestSuiteAttr:
 HtmlTestCaseAttr:
   classname: ClassName
   name: CaseName
+  status: PluginStatus
 
 
 All:
