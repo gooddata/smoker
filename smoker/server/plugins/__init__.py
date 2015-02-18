@@ -557,6 +557,7 @@ class Plugin(multiprocessing.Process):
         except Exception as e:
             lg.error("Plugin %s: module execution failed: %s" % (self.name, e))
             lg.exception(e)
+            signal.alarm(0)
             raise
 
         signal.alarm(0)

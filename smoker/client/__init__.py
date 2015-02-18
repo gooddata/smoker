@@ -388,7 +388,11 @@ class Host(object):
 
             if not res:
                 if retries == 0:
-                    lg.error("Polling on %s failed after 3 retries" % uri)
+                    lg.error(
+                        "Polling on %s failed after 3 retries. This may "
+                        "happen when a plugin died while waiting for the "
+                        "result. Please retry and check log on the hosts if "
+                        "it happens again." % uri)
                     return False
                 else:
                     retries -= 1
