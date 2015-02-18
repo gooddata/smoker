@@ -175,6 +175,7 @@ class ProgressBar(threading.Thread, object):
                 if not t.isAlive():
                     done += 1
             self.set_done(done)
+            time.sleep(1)
 
 ### Elements
 class Element(object):
