@@ -1,22 +1,26 @@
 # -*- coding: utf-8 -*-
-# Copyright © 2007-2013, All rights reserved. GoodData® Corporation, http://gooddata.com
+# Copyright © 2007-2013, All rights reserved. GoodData® Corporation
 
 __author__ = "miroslav.hedl@gooddata.com"
 __maintainer__ = __author__
 
 
 '''
-Primary goal of this module is function `plugins_to_xml` that solves issue PCI-1385.
+Primary goal of this module is function `plugins_to_xml` that solves issue
+PCI-1385.
 
-This module converts plugins dictionary from `Smoker.py` and produces generic list
-of named tuple based on configuration template (described inside).
+This module converts plugins dictionary from `Smoker.py` and produces generic
+list of named tuple based on configuration template (described inside).
 
-Also implements simple but flexible :py:class:`HtmlBuilder('node_name').sub_node(attr1='val1', attr2='$GenericValue').innerText("Inside text...")`
+Also implements simple but flexible
+:py:class:`HtmlBuilder('node_name').sub_node(attr1='val1',
+attr2='$GenericValue').innerText("Inside text...")`
 
 Jenkins doesn't take structure of xUnit/jUnit XML file into account.
 So sorting or structuring testsuites/testcases is futile effort.
 
-Important is to properly set 'classname' and 'name' attributes for testcase elements.
+Important is to properly set 'classname' and 'name' attributes for testcase
+elements.
 '''
 
 from cgi import escape
@@ -37,20 +41,26 @@ def plugins_to_xml(dict_data,
                    tc_attr='HtmlTestCaseAttr',
                    tc_elem='HtmlTestCaseElem'):
     """
-    Provided data (from plugins dictionary) and walking template, get all valid items and convert it to jUnit xml representation.
+    Provided data (from plugins dictionary) and walking template, get all valid
+    items and convert it to jUnit xml representation.
 
     Function have sane defaults (depends on calee opinion):
-    :param dict dict_data: datastructure taken as result from running smoke tests (Smoker's output)
-    :param str yaml_data: yaml string that will be taken as configuration; does have precedence before `yaml_filename`
-    :param str yaml_filename: if yaml_data is None, tries to read config from file specified as path (relative from cwd)
+    :param dict dict_data: datastructure taken as result from running smoke
+                           tests (Smoker's output)
+    :param str yaml_data: yaml string that will be taken as configuration; does
+                          have precedence before `yaml_filename`
+    :param str yaml_filename: if yaml_data is None, tries to read config from
+                              file specified as path (relative from cwd)
     :param list dict_templates: TODO: probably remove this parameter
-    :param dict additional_fields: get Yaml name for additional fields for Row namedtuple
+    :param dict additional_fields: get Yaml name for additional fields for Row
+                                   namedtuple
     :param dict ts_attr: get Yaml name for configured testsuite xml attributes
     :param dict tc_attr: get Yaml name for configured testcase xml attributes
     :param dict tc_elem: get Yaml name for configured testcase xml subelements
 
     :rval: string
-    :return: returns xml structure (testsuites corresponds to nodes, testcases to plugin)
+    :return: returns xml structure (testsuites corresponds to nodes, testcases
+             to plugin)
     """
     def apply(inst, custom_dict=None, **kwargs):
         """
@@ -100,17 +110,32 @@ def plugins_to_xml(dict_data,
                 with html_tss.testsuite as html_ts:
                     first = tcs[0] if tcs else None
                     if first:
-                        html_ts(custom_dict=apply(first, custom_dict=C[ts_attr]))
+                        html_ts(custom_dict=apply(first,
+                                                  custom_dict=C[ts_attr]))
                     for tc in sorted(tcs):
-                        html_tc = html_ts.testcase(custom_dict=apply(tc, custom_dict=C[tc_attr]))
-                        if tc.MsgWarn:
-                            html_tc <= (XmlBuilder('system-out') <= escape('\n'.join(tc.MsgWarn), quote=1))
-                        if tc.MsgError:
-                            getattr(html_tc, 'system-err') <= escape('\n'.join(tc.MsgError), quote=1)
-                            html_tc.error(message=tc.ErrorMessage)
+                        html_tc = html_ts.testcase(
+                            custom_dict=apply(tc, custom_dict=C[tc_attr]))
+
+                        if tc.CaseStatus == 'ERROR':
+                            if tc.MsgError:
+                                html_tc.error(message=escape(
+                                    list_to_string(tc.MsgError), quote=1))
+                            else:
+                                html_tc.error()
+                        elif tc.CaseStatus == 'WARN':
+                            if tc.MsgWarn:
+                                html_tc.failure(message=escape(
+                                    list_to_string(tc.MsgWarn), quote=1))
+                            else:
+                                html_tc.failure()
     return junit_xml.dump()
 
 
+def list_to_string(message):
+    if isinstance(message, list):
+        return '\n'.join(message)
+    else:
+        return message
 
 # def test_onepass():
 #     fixture_filename = 'tests/input_data_fixture'
