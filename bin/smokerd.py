@@ -11,17 +11,32 @@ import smoker.logger
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Smoke testing daemon')
-    parser.add_argument('-c', '--config', dest='config', default='/etc/smokerd/smokerd.yaml', help="Config file to use (default /etc/smokerd/smokerd.yaml)")
-    parser.add_argument('-p', '--pidfile', dest='pidfile', default='/var/run/smokerd.pid', help="PID file to use (default /var/run/smokerd.pid)")
-    parser.add_argument('-fg', '--foreground', dest='foreground', action='store_true', help="Don't fork into background")
-    parser.add_argument('--stop', dest='stop', action='store_true', help="Stop currently running daemon")
-    parser.add_argument('--no-syslog', dest='no_syslog', action='store_true', help="Don't use syslog handler")
-    parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help="Be verbose")
-    parser.add_argument('-d', '--debug', dest='debug', action='store_true', help="Debug output")
+    parser = argparse.ArgumentParser(
+        description='Smoke testing daemon',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument(
+        '-c', '--config', dest='config', default='/etc/smokerd/smokerd.yaml',
+        help="Config file to be used")
+    parser.add_argument(
+        '-p', '--pidfile', dest='pidfile', default='/var/run/smokerd.pid',
+        help="PID file to be used")
+    parser.add_argument(
+        '--logging-conf', dest='logging_conf',
+        default='/etc/smokerd/logging.ini', help="Path to logging config file")
+    parser.add_argument('-fg', '--foreground', dest='foreground',
+                        action='store_true', help="Don't fork into background")
+    parser.add_argument('--stop', dest='stop', action='store_true',
+                        help="Stop currently running daemon")
+    parser.add_argument('--no-syslog', dest='no_syslog', action='store_true',
+                        help=("Don't use syslog handler. Not effective when "
+                              "logging config file is used."))
+    parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
+                        help="Be verbose")
+    parser.add_argument('-d', '--debug', dest='debug', action='store_true',
+                        help="Debug output")
     args = parser.parse_args()
 
-    logging_args = {}
+    logging_args = {'config_file': args.logging_conf}
     # Don't log into console if we are going to background
     if not args.foreground:
         logging_args['console'] = False
@@ -36,10 +51,7 @@ def main():
     if args.debug:
         lg.setLevel(logging.DEBUG)
 
-    daemon = Smokerd(
-        config  = args.config,
-        pidfile = args.pidfile
-    )
+    daemon = Smokerd(config=args.config, pidfile=args.pidfile)
 
     if args.stop:
         daemon.stop()
