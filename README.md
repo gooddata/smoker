@@ -66,7 +66,9 @@ Or from Pypi (package is named gdc-smoker on Pypi):
 
 Or from local GIT checkout:
 
-	python setup.py install
+	make install
+
+This would invoke the setup.py script to perform the installation. You can also use the Makefile to build smoker RPM ($ make rpm).
 
 Then you can run it by init script or directly via smokerd.py
 

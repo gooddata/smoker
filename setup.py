@@ -6,15 +6,17 @@ import os
 import sys
 from setuptools import setup
 
-CONFIGDIR = '/etc/smokerd'
+DOCDIR = '/usr/share/doc/smoker'
 INITDIR = '/etc/rc.d/init.d'
+
+commits = os.popen('git log --oneline | wc -l').read().rstrip()
 
 # Parameters for build
 params = {
     # This package is named gdc-smoker on Pypi, use it on register or upload actions
-    'name' : 'gdc-smoker' if 'upload' in sys.argv or 'register' in sys.argv else 'smoker',
-    'version' : '1.0.4',
-    'packages' : [
+    'name': 'smoker',
+    'version': '2.0.%s' % commits,
+    'packages': [
         'smoker',
         'smoker.server',
         'smoker.server.plugins',
@@ -24,20 +26,20 @@ params = {
         'smoker.logger',
         'smoker.util'
         ],
-    'scripts' : [
+    'scripts': [
         'bin/smokerd.py',
         'bin/smokercli.py',
         'bin/check_smoker_plugin.py',
         ],
-    'url' : 'https://github.com/gooddata/smoker',
-    'download_url' : 'https://github.com/gooddata/smoker',
-    'license' : 'BSD',
-    'author' : 'GoodData Corporation',
-    'author_email' : 'python@gooddata.com',
-    'maintainer' : 'Filip Pytloun',
-    'maintainer_email' : 'filip@pytloun.cz',
-    'description' : 'Smoke Testing Framework',
-    'long_description' : """About
+    'url': 'https://github.com/gooddata/smoker',
+    'download_url': 'https://github.com/gooddata/smoker',
+    'license': 'BSD',
+    'author': 'GoodData Corporation',
+    'author_email': 'python@gooddata.com',
+    'maintainer': 'Filip Pytloun',
+    'maintainer_email': 'filip@pytloun.cz',
+    'description': 'Smoke Testing Framework',
+    'long_description': """About
 -------
 Smoker (aka Smoke Testing Framework) is a framework for distributed execution of Python modules, shell commands or external tools.
 It executes configured plugins on request or periodically, unifies output and provide it via REST API for it's command-line or other client.
@@ -64,7 +66,7 @@ Common use-cases in short:
  * execute smoke tests on newly deployed systems
  * execute checks periodically, send output to monitoring system (eg. Nagios)
  * execute jobs that requires attention on result or output (like Cron with ability to store results)""",
-    'classifiers' : [
+    'classifiers': [
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Environment :: No Input/Output (Daemon)',
@@ -78,12 +80,12 @@ Common use-cases in short:
         'Topic :: Software Development :: Testing',
         'Topic :: System :: Monitoring',
     ],
-    'platforms' : ['POSIX'],
-    'provides' : ['smoker'],
-    'install_requires' : ['PyYAML', 'argparse', 'simplejson', 'psutil', 'setproctitle', 'Flask-RESTful'],
+    'platforms': ['POSIX'],
+    'provides': ['smoker'],
+    'install_requires': ['PyYAML', 'argparse', 'simplejson', 'psutil', 'setproctitle', 'Flask-RESTful'],
     'data_files': [
         (INITDIR, ['rc.d/init.d/smokerd']),
-        (CONFIGDIR, ['etc/smokerd-example.yaml', 'etc/smokercli-example.yaml'])
+        (DOCDIR, ['etc/smokerd-example.yaml', 'etc/smokercli-example.yaml'])
     ]
 }
 
@@ -97,17 +99,6 @@ if not branch:
         branch = 'master'
 else:
     branch = branch.replace('origin/', '')
-
-# Get git revision hash
-revision = os.popen('git rev-parse --short HEAD').read().strip()
-
-if not revision:
-    revision = '0'
-
-# Get build number
-build = os.getenv('BUILD_NUMBER')
-if not build:
-    build = '1'
 
 try:
     action = sys.argv[1]
@@ -140,12 +131,5 @@ if action == 'clean':
                 pass
             else:
                 raise
-elif action == 'bdist_rpm':
-    # Set release number
-    sys.argv.append('--release=1.%s.%s' % (build, revision))
-    # Require same version of gdc-python-common package
-    sys.argv.append(
-        '--requires=python-argparse python-simplejson python-setproctitle '
-        'python-flask-restful')
 
 setup(**params)
