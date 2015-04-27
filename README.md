@@ -108,6 +108,7 @@ Following options can be overwritten in `/etc/default/smokerd`
 
 Simply copy script for your distribution into `/etc/init.d/smokerd`.
 Smoker is using syslog for logging, so watch `/var/log/messages` if something is not working correctly.
+You can change the logging configuration by creating `/etc/smokerd/logging.ini` using python's logging.config configuration dictionary schema.
 
 ##### Mac OS X
 For Mac OS X, you can use org.smoker.smokerd.plist, just edit and fix path to smokerd.py binary or adjust for your needs. Don't forget to create configuration file in /etc/smokerd/smokerd.yaml before loading.
@@ -115,7 +116,7 @@ For Mac OS X, you can use org.smoker.smokerd.plist, just edit and fix path to sm
 	sudo cp rc.d/init.d/org.smoker.smokerd.plist /Library/LaunchAgents/
 	sudo launchctl load /Library/LaunchAgents/org.smoker.smokerd.plist
 
-When Smoker is started this way, it doesn't log into syslog. Standard and error output goes into /var/smokerd-std*.log so watch it for more informations.
+When Smoker is started this way, it doesn't log into syslog unless logging config file is in use.  Standard and error output goes into /var/log/smokerd-std*.log so watch it for more informations.
 
 #### Manual start
 Use following command to start smokerd in foreground with verbose output:
