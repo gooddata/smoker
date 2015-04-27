@@ -1,10 +1,8 @@
 %global with_check 0
-%define commits %(git log --oneline | wc -l)
-%define hash %(git rev-parse --short HEAD)
 
 Name:           smoker
-Version:        2.0
-Release:        %{commits}.%{hash}%{?dist}
+Version:        %VERSION%
+Release:        1%{?dist}
 Epoch:          1
 Summary:        Smoke Testing Framework
 

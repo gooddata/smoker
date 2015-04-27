@@ -9,23 +9,31 @@ sources:
 	tar czf "$(TMPDIR)/smoker.tar.gz" ../smoker
 	mv "$(TMPDIR)/smoker.tar.gz" smoker.tar.gz
 	rmdir "$(TMPDIR)"
+	# Generate spec file - needs to be in repository root to work with Koji
+	sed -e s,\%VERSION\%,$(VERSION),g \
+		contrib/smoker.spec > smoker.spec
 
 install:
 	python setup.py install
 
 rpm: sources
-	mkdir -p contrib/rpm/SOURCES
-	ln -s smoker*.tar.gz contrib/rpm/SOURCES/
-	rpmbuild --define "_topdir $(CURDIR)/contrib/rpm" -ba contrib/rpm/SPECS/smoker.spec
+	# Prepare directories and sources for rpmbuild
+	mkdir -p build/rpm/SRPMS
+	mkdir -p build/rpm/BUILD
+	mkdir -p build/rpm/SOURCES
+	cp smoker*.tar.gz build/rpm/SOURCES/
+	mkdir -p build/rpm/SPECS
+	cp smoker.spec build/rpm/SPECS/
+	# Build RPM
+	rpmbuild --define "_topdir $(CURDIR)/build/rpm" -ba build/rpm/SPECS/smoker.spec
 
 clean:
 	python setup.py clean
 	rm -f smoker.tar.gz
 	rm -rf smoker.egg-info
-	rm -rf contrib/rpm/SOURCES
-	rm -rf contrib/rpm/BUILD
-	rm -rf contrib/rpm/RPMS
-	rm -rf contrib/rpm/SRPMS
+	rm -rf build
+	rm -rf dist
+	rm -f smoker.spec
 
 upload:
 	# You need following in ~/.pypirc to be able to upload new build

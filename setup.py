@@ -9,13 +9,11 @@ from setuptools import setup
 DOCDIR = '/usr/share/doc/smoker'
 INITDIR = '/etc/rc.d/init.d'
 
-commits = os.popen('git log --oneline | wc -l').read().rstrip()
-
 # Parameters for build
 params = {
     # This package is named gdc-smoker on Pypi, use it on register or upload actions
-    'name': 'smoker',
-    'version': '2.0.%s' % commits,
+    'name' : 'gdc-smoker' if 'upload' in sys.argv or 'register' in sys.argv else 'smoker',
+    'version': '2.0',
     'packages': [
         'smoker',
         'smoker.server',
@@ -39,33 +37,7 @@ params = {
     'maintainer': 'Filip Pytloun',
     'maintainer_email': 'filip@pytloun.cz',
     'description': 'Smoke Testing Framework',
-    'long_description': """About
--------
-Smoker (aka Smoke Testing Framework) is a framework for distributed execution of Python modules, shell commands or external tools.
-It executes configured plugins on request or periodically, unifies output and provide it via REST API for it's command-line or other client.
-
-Also it's free software, licensed under the terms of BSD license - feel free to contribute!
-
-Purpose and use
----------------
-It was developed in GoodData to satisfy single use-case - be able to quickly and easily check that all services and components are functional overall cluster.
-That may be simple if you have similar services with unified communication protocols. But if you have many services and components, written in many languages including Java, Perl, Erlang, Python together, you need more customizable approach, because each language has it's specific way to test things.
-
-For example.. if you have services written in Java, you may use JMX interface to execute test function and get result.
-For services with REST API, you may want to call it's API to get the result.
-And of course you want to test system services. For example check Varnish backends health by executing `varnishadm 'debug.health'`. Or checking that Mongo is configured correctly by running custom Python plugin or shell script.
-
-All those tests will return something different - you may get JSON response from REST API, XML from Java service, more complex data structure from Python plugin or simple STDOUT/STDERR and exit value from shell script. Smoker server will unify all those outputs and serve results over REST API so you can connect via CLI client and find out what is wrong in your cluster.
-
-These tests may be executed periodically or when requested by client.
-And actions are supported as well - you can write your own action plugin, parse result, decide and execute some action. For example, you can send status via NSCA to your Nagios system. Or you can just restart service when it's not working.
-
-But Smoker can do more - you can use it if you want to execute any job and see it's result in a readable way. For some purposes, it may be more suitable than Cron.
-
-Common use-cases in short:
- * execute smoke tests on newly deployed systems
- * execute checks periodically, send output to monitoring system (eg. Nagios)
- * execute jobs that requires attention on result or output (like Cron with ability to store results)""",
+    'long_description': open('DESCRIPTION.md').read(),
     'classifiers': [
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
@@ -88,48 +60,5 @@ Common use-cases in short:
         (DOCDIR, ['etc/smokerd-example.yaml', 'etc/smokercli-example.yaml'])
     ]
 }
-
-# Get current branch
-branch = os.getenv('GIT_BRANCH')
-if not branch:
-    branch = os.popen(
-        'git branch|grep -v "no branch"|grep \*|sed s,\*\ ,,g').read().strip()
-
-    if not branch:
-        branch = 'master'
-else:
-    branch = branch.replace('origin/', '')
-
-try:
-    action = sys.argv[1]
-except IndexError:
-    action = None
-
-if action == 'clean':
-    # Remove MANIFEST file
-    print "Cleaning MANIFEST.."
-    try:
-        os.unlink('MANIFEST')
-    except OSError as e:
-        if e.errno == 2:
-            pass
-        else:
-            raise
-
-    # Remove dist and build directories
-    for dir in ['dist', 'build']:
-        print "Cleaning %s.." % dir
-        for root, dirs, files in os.walk(dir, topdown=False):
-            for name in files:
-                os.remove(os.path.join(root, name))
-            for name in dirs:
-                os.rmdir(os.path.join(root, name))
-        try:
-            os.rmdir(dir)
-        except OSError as e:
-            if e.errno == 2:
-                pass
-            else:
-                raise
 
 setup(**params)
