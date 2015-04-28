@@ -6,12 +6,11 @@ all:
 
 sources: clean
 	$(eval TMPDIR := $(shell mktemp -d))
+	# Populate the spec file with correct version from setup.py
+	sed -i -e s,\%VERSION\%,$(VERSION),g smoker.spec
 	tar czf "$(TMPDIR)/smoker.tar.gz" ../smoker
 	mv "$(TMPDIR)/smoker.tar.gz" smoker.tar.gz
 	rmdir "$(TMPDIR)"
-	# Populate the spec file with correct version from setup.py
-	sed -e s,\%VERSION\%,$(VERSION),g \
-		contrib/smoker.spec > smoker.spec
 
 install:
 	python setup.py install
@@ -31,8 +30,6 @@ clean:
 	rm -rf smoker.egg-info
 	rm -rf build
 	rm -rf dist
-	rm -rf build
-	rm -f smoker.spec
 
 upload:
 	# You need following in ~/.pypirc to be able to upload new build
