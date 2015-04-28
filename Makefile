@@ -4,25 +4,24 @@ $(info == Making version $(VERSION))
 all:
 	python setup.py build
 
-sources:
+sources: clean
 	$(eval TMPDIR := $(shell mktemp -d))
 	tar czf "$(TMPDIR)/smoker.tar.gz" ../smoker
 	mv "$(TMPDIR)/smoker.tar.gz" smoker.tar.gz
 	rmdir "$(TMPDIR)"
+	# Populate the spec file with correct version from setup.py
+	sed -e s,\%VERSION\%,$(VERSION),g \
+		contrib/smoker.spec > smoker.spec
 
 install:
 	python setup.py install
 
 rpm: sources
-	# Prepare directories and sources for rpmbuild
-	mkdir -p build/rpm/SRPMS
-	mkdir -p build/rpm/BUILD
+	# Prepare directories and source for rpmbuild
 	mkdir -p build/rpm/SOURCES
 	cp smoker*.tar.gz build/rpm/SOURCES/
 	mkdir -p build/rpm/SPECS
-	# Generate spec file
-	sed -e s,\%VERSION\%,$(VERSION),g \
-		contrib/smoker.spec > build/rpm/SPECS/smoker.spec
+	cp smoker.spec build/rpm/SPECS/
 	# Build RPM
 	rpmbuild --define "_topdir $(CURDIR)/build/rpm" -ba build/rpm/SPECS/smoker.spec
 
@@ -32,6 +31,8 @@ clean:
 	rm -rf smoker.egg-info
 	rm -rf build
 	rm -rf dist
+	rm -rf build
+	rm -f smoker.spec
 
 upload:
 	# You need following in ~/.pypirc to be able to upload new build
