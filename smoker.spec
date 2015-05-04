@@ -1,22 +1,22 @@
 %global with_check 0
 
-Name:           smoker
-Version:        %VERSION%
-Release:        1%{?dist}
-Epoch:          1
-Summary:        Smoke Testing Framework
+Name:		smoker
+Version:	2.0
+Release:	1%{?dist}
+Epoch:		1
+Summary:	Smoke Testing Framework
 
-Group:          Applications/System
-License:        BSD
-URL:            https://github.com/gooddata/smoker
-Source0:        smoker.tar.gz
+Group:		Applications/System
+License:	BSD
+URL:		https://github.com/gooddata/smoker
+Source0:	smoker.tar.gz
 
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildArch:      noarch
-BuildRequires:  python2-devel python-setuptools-devel python-flask-restful python-setproctitle python-psutil python-simplejson python-argparse PyYAML
-Requires:       python-flask-restful >= 1:0.3.1-5
-Requires:       python-setproctitle
-Obsoletes:      gdc-smoker
+BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+BuildArch:	noarch
+BuildRequires:	python2-devel python-setuptools-devel python-flask-restful python-setproctitle python-psutil python-simplejson python-argparse PyYAML
+Requires:	python-flask-restful >= 1:0.3.1-5
+Requires:	python-setproctitle
+Obsoletes:	gdc-smoker
 
 
 %description
