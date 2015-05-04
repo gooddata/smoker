@@ -1,5 +1,4 @@
 VERSION := $(shell python setup.py --version)
-$(info == Making version $(VERSION))
 
 all:
 	python setup.py build
@@ -7,7 +6,6 @@ all:
 sources: clean
 	$(eval TMPDIR := $(shell mktemp -d))
 	# Populate the spec file with correct version from setup.py
-	sed -i -e s,\%VERSION\%,$(VERSION),g smoker.spec
 	tar czf "$(TMPDIR)/smoker.tar.gz" ../smoker
 	mv "$(TMPDIR)/smoker.tar.gz" smoker.tar.gz
 	rmdir "$(TMPDIR)"
@@ -25,11 +23,18 @@ rpm: sources
 	rpmbuild --define "_topdir $(CURDIR)/build/rpm" -ba build/rpm/SPECS/smoker.spec
 
 clean:
-	python setup.py clean
 	rm -f smoker.tar.gz
 	rm -rf smoker.egg-info
 	rm -rf build
 	rm -rf dist
+
+version:
+	# Use for easier version bumping.
+	# Helps keeping version consistent both in setup.py and smoker.spec
+	@echo "Current version: $(VERSION)"
+	@read -p "Type new version: " newversion; \
+	sed -i -e "s/    'version': .*/    'version': '$$newversion',/" setup.py; \
+	sed -i -e "s,Version:	.*,Version:	$$newversion," smoker.spec
 
 upload:
 	# You need following in ~/.pypirc to be able to upload new build
