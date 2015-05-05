@@ -48,6 +48,10 @@ All:
         lastResult:
           status: '$PluginStatus /ERROR|WARN|OK/'
           lastRun: '$LastRun'
+          messages:
+            info:  '$MsgInfo'
+            warn:  '$MsgWarn'
+            error:  '$MsgError'
           componentResults:
             '!Integral':
              componentResult:
