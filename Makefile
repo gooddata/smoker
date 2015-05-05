@@ -40,13 +40,13 @@ upload:
 	# You need following in ~/.pypirc to be able to upload new build
 	# Also you need to be a maintainer or owner of gdc-smoker package
 	#
-	#	[distutils]
-	#	index-servers = pypi
-	#
 	#	[pypi]
-	#	repository: https://pypi.python.org/pypi
 	#	username: xyz
-	#	password: xyz
+	#	password: foo
+	#
+	#	[server-login]
+	#	username: xyz
+	#	password: foo
 	#
 	@while [ -z "$$CONTINUE" ]; do \
 		read -r -p "Are you sure you want to upload version $(VERSION) to Pypi? [y/N] " CONTINUE; \
