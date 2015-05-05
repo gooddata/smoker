@@ -13,7 +13,7 @@ INITDIR = '/etc/rc.d/init.d'
 params = {
     # This package is named gdc-smoker on Pypi, use it on register or upload actions
     'name' : 'gdc-smoker' if 'upload' in sys.argv or 'register' in sys.argv else 'smoker',
-    'version': '2.0.1',
+    'version': '2.0.2',
     'packages': [
         'smoker',
         'smoker.server',

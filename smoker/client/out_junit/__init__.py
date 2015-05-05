@@ -116,18 +116,28 @@ def plugins_to_xml(dict_data,
                         html_tc = html_ts.testcase(
                             custom_dict=apply(tc, custom_dict=C[tc_attr]))
 
-                        if tc.CaseStatus == 'ERROR':
+                        # handle plugins without components
+                        if tc.CaseStatus:
+                            distinguisher = tc.CaseStatus
+                        else:
+                            distinguisher = tc.PluginStatus
+                        if not tc.CaseName:
+                            html_tc.name = tc.Plugin
+
+                        if distinguisher == 'ERROR':
                             if tc.MsgError:
                                 html_tc.error(message=escape(
                                     list_to_string(tc.MsgError), quote=1))
                             else:
                                 html_tc.error()
-                        elif tc.CaseStatus == 'WARN':
+                        elif distinguisher == 'WARN':
+                            # add the child element
+                            # can't call directly because of the dash
+                            out = html_tc.__getattr__('system-out')
                             if tc.MsgWarn:
-                                html_tc.failure(message=escape(
+                                # poppulate it with content, fi applicable
+                                out.__setattr__('message', escape(
                                     list_to_string(tc.MsgWarn), quote=1))
-                            else:
-                                html_tc.failure()
     return junit_xml.dump()
 
 
