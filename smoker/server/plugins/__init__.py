@@ -63,13 +63,6 @@ class PluginManager(object):
         # Load Plugin objects
         self.load_plugins()
 
-    def start(self):
-        """
-        Start all plugins
-        """
-        for name, plugin in self.plugins.iteritems():
-            plugin.start()
-
     def stop(self, blocking=True):
         """
         Stop all plugins
@@ -78,9 +71,10 @@ class PluginManager(object):
         self.stopping = True
 
         # Trigger stop of all plugins
-        for name, plugin in self.plugins.iteritems():
-            plugin.stop()
-            plugin.terminate()
+        for plugin in self.plugins.values():
+            if plugin.current_run:
+                plugin.current_run.stop()
+                plugin.current_run.terminate()
 
         # Wait until all plugins are stopped
         if blocking:
@@ -89,10 +83,12 @@ class PluginManager(object):
             while plugins_left:
                 plugins_left = []
                 for name, plugin in self.plugins.iteritems():
-                    if plugin.is_alive():
+                    if not plugin.current_run:
+                        continue
+                    if plugin.current_run.is_alive():
                         plugins_left.append(name)
                     else:
-                        plugin.join()
+                        plugin.current_run.join()
                 if plugins_left:
                     # Print info only if number of left plugins changed
                     if len(plugins_left) != plugins_left_cnt:
@@ -158,14 +154,6 @@ class PluginManager(object):
 
         params = dict(template, **options)
         return Plugin(plugin, params)
-
-    def restart_plugin(self, name):
-        lg.info("Restarting plugin %s" % name)
-        self.plugins[name].join()
-
-        self.plugins[name] = self.load_plugin(name, self.conf_plugins[name])
-        self.plugins[name].start()
-
 
     def get_template(self, name):
         """
@@ -257,8 +245,9 @@ class PluginManager(object):
 
         # Force run for each plugin and clear forced_result
         for plugin in plugins_list:
-            plugin.forceFlag.set()
+            plugin.forced = True
             plugin.forced_result = None
+            plugin.run()
 
         return id
 
@@ -274,13 +263,35 @@ class PluginManager(object):
         """
         return self.processes
 
+    def run_plugins_with_interval(self):
+        """
+        Start run of plugins configured as such
+        """
+        for plugin in self.plugins.values():
+            if not plugin.params['Interval']:
+                continue
+            plugin.run()
 
-class Plugin(multiprocessing.Process):
+    def join_timed_plugin_workers(self):
+        """
+        Join zombie workers of interval-triggered runs
+        The results will be picked by REST server forked ends of the queues
+        """
+        for plugin in self.plugins.values():
+            if not plugin.params['Interval']:
+                continue
+            if plugin.current_run:
+                plugin.current_run.join()
+                plugin.current_run = None
+
+
+class Plugin(object):
     """
     Object that represents single plugin
     """
     name = None
     params = {}
+    current_run = None
 
     params_default = {
         'Command' : None,
@@ -324,7 +335,7 @@ class Plugin(multiprocessing.Process):
 
         # create the instances of the Queue and force flag
         self.queue = multiprocessing.Queue()
-        self.forceFlag = multiprocessing.Event()
+        self.forced = False
 
         # Set those variables or they will be
         # references, shared between plugins
@@ -335,33 +346,9 @@ class Plugin(multiprocessing.Process):
         # Validate configuration
         self.validate()
 
-        # Drop privileges
-        if self.params['uid'] != 'default' or self.params['gid'] != 'default':
-            lg.debug("Plugin %s: dropping privileges to %s/%s" % (self.name, self.params['uid'], self.params['gid']))
-            try:
-                os.setegid(self.params['gid'])
-                os.seteuid(self.params['uid'])
-            except TypeError as e:
-                lg.error("Plugin %s: config parameters uid/gid have to be integers: %s" % (self.name, e))
-                raise
-            except OSError as e:
-                lg.error("Plugin %s: can't switch effective UID/GID to %s/%s: %s" % (self.name, self.params['uid'], self.params['gid'], e))
-                raise
-
         # Schedule first plugin run
         if self.params['Interval']:
             self.schedule_run()
-
-        # Run Process constructor, we want to be daemonic process
-        super(Plugin, self).__init__()
-        self.daemon = True
-
-    def stop(self):
-        """
-        Set stopping variable
-        """
-        self.stopping = True
-        return self.stopping
 
     def validate(self):
         """
@@ -389,26 +376,23 @@ class Plugin(multiprocessing.Process):
         Run process
         Check if plugin should be run and execute it
         """
-        setproctitle.setproctitle('smokerd plugin %s' % self.name)
-        try:
-            while self.stopping is not True:
-                # Plugin run when forced
-                if self.forceFlag.is_set():
+        if self.current_run:  # already running
+            return
+        # Plugin run when forced
+        if self.forced:
+            with semaphore:
+                self.current_run = PluginWorker(self.name, self.queue,
+                                                self.params, self.forced)
+                self.current_run.start()
+        else:
+            # Plugin run in interval
+            if self.params['Interval']:
+                if datetime.datetime.now() >= self.next_run:
                     with semaphore:
-                        self.run_plugin(force=True)
-                    self.forceFlag.clear()
-                else:
-                    # Plugin run in interval
-                    if self.params['Interval']:
-                        if datetime.datetime.now() >= self.next_run:
-                            with semaphore:
-                                self.run_plugin()
-                time.sleep(1)
-        except KeyboardInterrupt:
-            pass
-
-        # Stop the process
-        lg.info("Shutting down plugin %s" % self.name)
+                        self.current_run = PluginWorker(self.name, self.queue,
+                                                        self.params)
+                        self.current_run.start()
+                    self.schedule_run()
 
     def schedule_run(self, time=None, now=False):
         """
@@ -427,6 +411,53 @@ class Plugin(multiprocessing.Process):
             if self.params['Interval']:
                 self.next_run = datetime.datetime.now() + datetime.timedelta(seconds=self.params['Interval'])
 
+    def collect_new_result(self):
+        if self.queue.empty():  # no new results
+            return
+
+        while not self.queue.empty():
+            result = self.queue.get()
+            self.result.append(result)
+
+            if 'forced' in result.keys() and result['forced']:
+                self.forced_result = self.get_last_result()
+                self.forced = False
+
+            if len(self.result) > self.params['History']:
+                self.result.pop(0)
+
+        if self.current_run:  # forced, not externally fed to the queue
+            self.current_run.join()
+            self.current_run = None
+
+    def get_last_result(self):
+        """
+        Get last run result or None
+        """
+        if not self.result:
+            return None
+
+        return self.result[-1]
+
+
+class PluginWorker(multiprocessing.Process):
+    def __init__(self, name, queue, params, forced=False):
+        self.plugin_name = name
+        self.queue = queue
+        self.params = params
+        self.forced = forced
+        self.result = None
+
+        super(PluginWorker, self).__init__()
+        self.daemon = True
+
+    def run(self):
+        setproctitle.setproctitle('smokerd plugin %s' % self.plugin_name)
+        self.drop_privileged()
+
+        self.run_plugin(self.forced)
+        self.queue.put(self.result)
+
     def run_command(self, command, timeout=0):
         """
         Run system command and parse output
@@ -434,17 +465,15 @@ class Plugin(multiprocessing.Process):
         result = Result()
         lg.debug("Plugin %s: executing command %s" % (self.name, command))
 
-        # Prepare params for stdin
-        tmp = os.tmpfile()
-        tmp.write(simplejson.dumps(dict(self.params, **self.get_last_result(True))))
-
         try:
-            stdout, stderr, returncode = smoker.util.command.execute(command, timeout=timeout, stdin=tmp)
+            stdout, stderr, returncode = smoker.util.command.execute(
+                command, timeout=timeout)
         except smoker.util.command.ExecutionTimeout as e:
             raise PluginExecutionTimeout(e)
         except Exception as e:
             lg.exception(e)
-            raise PluginExecutionError("Can't execute command %s: %s" % (command, e))
+            raise PluginExecutionError(
+                "Can't execute command %s: %s" % (command, e))
 
         if returncode:
             status = 'ERROR'
@@ -572,10 +601,7 @@ class Plugin(multiprocessing.Process):
         """
         # External command will be executed
         if self.params['Command']:
-            # Add parameters to command with format
-            params = dict(self.params, **self.get_last_result(True))
-            params = self.escape(params)
-            command = self.params['Command'] % params
+            command = self.params['Command'] % self.escape(dict(self.params))
             # Execute external command to get result
             try:
                 result = self.run_command(command, self.params['Timeout'])
@@ -637,46 +663,17 @@ class Plugin(multiprocessing.Process):
         result.set_forced(force)
         # send to the daemon
         try:
-            self.queue.put(result.get_result())
+            self.result = result.get_result()
         except ValidationError as e:
             lg.error("Plugin %s: ValidationError: %s" % (self.name, e))
             result = Result()
             result.set_status('ERROR')
             result.add_error('ValidationError: %s' % e)
             result.set_forced(force)
-            self.queue.put(result.get_result())
+            self.result = result.get_result()
 
         # Log result
         lg.info("Plugin %s result: %s" % (self.name, result.get_result()))
-
-        # Finally schedule next run
-        self.schedule_run()
-
-    def get_last_result(self, dictionary=False):
-        """
-        Get last run result or False
-        If dictionary=True, then return value will be always dict
-        eg. for use like dict(self.params, **self.get_last_result(True))
-        """
-        while not self.queue.empty():
-            self.result.append(self.queue.get())
-            # Remove earliest result to keep only number
-            # of results by parameter
-            if len(self.result) > self.params['History']:
-                self.result.pop(0)
-
-        try:
-            res = self.result[-1]
-        except IndexError:
-            if dictionary:
-                return {}
-            else:
-                return None
-
-        if res and res['forced'] and not self.forceFlag.is_set():
-           self.forced_result = res
-
-        return res
 
     def escape(self, tbe):
         """
@@ -726,6 +723,25 @@ class Plugin(multiprocessing.Process):
             return self.params[name]
         except KeyError:
             return default
+
+    def drop_privileged(self):
+        if (self.params['uid'] == 'default' and
+                self.params['gid'] == 'default'):
+            return
+        lg.debug("Plugin %s: dropping privileges to %s/%s"
+                 % (self.name, self.params['uid'], self.params['gid']))
+        try:
+            os.setegid(self.params['gid'])
+            os.seteuid(self.params['uid'])
+        except TypeError as e:
+            lg.error("Plugin %s: config parameters uid/gid have to be "
+                     "integers: %s" % (self.name, e))
+            raise
+        except OSError as e:
+            lg.error("Plugin %s: can't switch effective UID/GID to %s/%s: %s"
+                     % (self.name, self.params['uid'], self.params['gid'], e))
+            raise
+
 
 class Result(object):
     """
