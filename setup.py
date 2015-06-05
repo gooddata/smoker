@@ -63,7 +63,8 @@ params = {
     'data_files': [
         (INITDIR, ['rc.d/init.d/smokerd']),
         (DOCDIR, ['etc/smokerd-example.yaml', 'etc/smokercli-example.yaml'])
-    ]
+    ],
+    'test_suite': 'tests'
 }
 
 setup(**params)

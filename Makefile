@@ -1,7 +1,6 @@
 VERSION := $(shell python setup.py --version)
 
-all:
-	python setup.py build
+all: build
 
 sources: clean
 	$(eval TMPDIR := $(shell mktemp -d))
@@ -10,8 +9,8 @@ sources: clean
 	mv "$(TMPDIR)/smoker.tar.gz" smoker.tar.gz
 	rmdir "$(TMPDIR)"
 
-install:
-	python setup.py install
+build install test:
+	python setup.py $@
 
 rpm: sources
 	# Prepare directories and source for rpmbuild
