@@ -294,16 +294,16 @@ class Plugin(object):
     current_run = None
 
     params_default = {
-        'Command' : None,
-        'Module'  : None,
-        'Parser'  : None,
+        'Command': None,
+        'Module': None,
+        'Parser': None,
         'Interval': 0,
-        'Timeout' : 1800,
-        'History' : 10,
-        'uid'     : 'default',
-        'gid'     : 'default',
+        'Timeout': 1800,
+        'History': 10,
+        'uid': 'default',
+        'gid': 'default',
         'Template': None,
-        'Action'  : None,
+        'Action': None,
     }
 
     def __init__(self, name, params):
@@ -404,12 +404,14 @@ class Plugin(object):
             if isinstance(time, object) and type(time).__name__ == 'datetime':
                 self.next_run = time
             else:
-                raise InvalidArgument('Parameter time has to be an instance of datetime object')
-        elif now == True:
+                raise InvalidArgument(
+                    'Parameter time has to be an instance of datetime object')
+        elif now:
             self.next_run = datetime.datetime.now()
-        else:
-            if self.params['Interval']:
-                self.next_run = datetime.datetime.now() + datetime.timedelta(seconds=self.params['Interval'])
+        elif self.params['Interval']:
+            self.next_run = (
+                datetime.datetime.now() +
+                datetime.timedelta(seconds=self.params['Interval']))
 
     def collect_new_result(self):
         if self.queue.empty():  # no new results

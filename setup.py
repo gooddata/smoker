@@ -9,10 +9,15 @@ from setuptools import setup
 DOCDIR = '/usr/share/doc/smoker'
 INITDIR = '/etc/rc.d/init.d'
 
+# This package is named gdc-smoker on Pypi (register or upload actions)
+if 'upload' in sys.argv or 'register' in sys.argv:
+    name = 'gdc-smoker'
+else:
+    name = 'smoker'
+
 # Parameters for build
 params = {
-    # This package is named gdc-smoker on Pypi, use it on register or upload actions
-    'name' : 'gdc-smoker' if 'upload' in sys.argv or 'register' in sys.argv else 'smoker',
+    'name': name,
     'version': '2.0.3',
     'packages': [
         'smoker',

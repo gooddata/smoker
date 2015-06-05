@@ -169,9 +169,11 @@ class Smokerd(object):
             lg.exception(e)
             self._shutdown(exitcode=1)
 
-        lg.info("Starting webserver on %(bind_host)s:%(bind_port)s" % self.conf)
+        lg.info("Starting webserver on %(bind_host)s:%(bind_port)s"
+                % self.conf)
         try:
-            self.server = RestServer(self.conf['bind_host'], self.conf['bind_port'], self)
+            self.server = RestServer(self.conf['bind_host'],
+                                     self.conf['bind_port'], self)
             self.server.start()
         except Exception as e:
             lg.error("Can't start HTTP server: %s" % e)
