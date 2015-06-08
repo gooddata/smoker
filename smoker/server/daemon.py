@@ -169,16 +169,11 @@ class Smokerd(object):
             lg.exception(e)
             self._shutdown(exitcode=1)
 
+        lg.info("Starting webserver on %(bind_host)s:%(bind_port)s"
+                % self.conf)
         try:
-            self.pluginmgr.start()
-        except Exception as e:
-            lg.error("Can't start PluginManager")
-            lg.exception(e)
-            self._shutdown(exitcode=1)
-
-        lg.info("Starting webserver on %(bind_host)s:%(bind_port)s" % self.conf)
-        try:
-            self.server = RestServer(self.conf['bind_host'], self.conf['bind_port'], self)
+            self.server = RestServer(self.conf['bind_host'],
+                                     self.conf['bind_port'], self)
             self.server.start()
         except Exception as e:
             lg.error("Can't start HTTP server: %s" % e)
@@ -205,14 +200,11 @@ class Smokerd(object):
                 self._restart_api_server()
                 lg.info("restarted the REST API server")
 
-            for plugin in self.pluginmgr.plugins.values():
-                if not plugin.is_alive():
-                    lg.error("Plugin %s is dead" % plugin.name)
-                    self.pluginmgr.restart_plugin(plugin.name)
-                    # need to restart the REST server so it has reference to
-                    # the new plugin instance
-                    self._restart_api_server()
-            time.sleep(10)
+            # Take care of execution of the timed plugins
+            self.pluginmgr.run_plugins_with_interval()
+            self.pluginmgr.join_timed_plugin_workers()
+
+            time.sleep(5)
 
     def _restart_api_server(self):
         self.server.terminate()

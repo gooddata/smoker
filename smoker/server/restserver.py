@@ -61,6 +61,7 @@ def print_plugin(name, forced=False):
     """
 
     plugin = smokerd.pluginmgr.get_plugin(name)
+    plugin.collect_new_result()
 
     # Format plugin result
     plugin_result = {
@@ -282,6 +283,7 @@ class Process(Resource):
         plugins = []
         for plugin in process['plugins']:
             plugins.append(plugin.name)
+            smokerd.pluginmgr.get_plugin(plugin.name).collect_new_result()
 
         try:
             return print_plugins(plugins, forced=True)
@@ -316,7 +318,6 @@ class RestServer(multiprocessing.Process):
         smokerd = smoker_daemon
 
         super(RestServer, self).__init__()
-        self.daemon = True
 
     def run(self):
         setproctitle.setproctitle('smokerd rest api server')
