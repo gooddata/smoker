@@ -380,19 +380,15 @@ class Plugin(object):
             return
         # Plugin run when forced
         if self.forced:
-            with semaphore:
+            self.current_run = PluginWorker(self.name, self.queue, self.params,
+                                            self.forced)
+            self.current_run.start()
+        elif self.params['Interval']:
+            if datetime.datetime.now() >= self.next_run:
                 self.current_run = PluginWorker(self.name, self.queue,
-                                                self.params, self.forced)
+                                                self.params)
                 self.current_run.start()
-        else:
-            # Plugin run in interval
-            if self.params['Interval']:
-                if datetime.datetime.now() >= self.next_run:
-                    with semaphore:
-                        self.current_run = PluginWorker(self.name, self.queue,
-                                                        self.params)
-                        self.current_run.start()
-                    self.schedule_run()
+                self.schedule_run()
 
     def schedule_run(self, time=None, now=False):
         """
@@ -457,7 +453,8 @@ class PluginWorker(multiprocessing.Process):
         setproctitle.setproctitle('smokerd plugin %s' % self.plugin_name)
         self.drop_privileged()
 
-        self.run_plugin(self.forced)
+        with semaphore:
+            self.run_plugin(self.forced)
         self.queue.put(self.result)
 
     def run_command(self, command, timeout=0):
