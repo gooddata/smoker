@@ -154,48 +154,99 @@ def main():
     """
     Main entrance
     """
-    parser = argparse.ArgumentParser(description='Smoker client tool', add_help=False)
+    parser = argparse.ArgumentParser(
+        description='Smoker client tool', add_help=False)
 
     # Action arguments
     group_action = parser.add_argument_group('Action switchers')
-    group_action.add_argument('-f', '--force', dest='force', action='store_true', help="Force plugins run (otherwise just print last results)")
-    group_action.add_argument('-l', '--list', dest='list', action='store_true', help="List plugins")
-    group_action.add_argument('-h', '--help', dest='help', action='store_true', help="Show this help and exit")
+    group_action.add_argument(
+        '-f', '--force', dest='force', action='store_true',
+        help="Force plugins run (otherwise just print last results)")
+    group_action.add_argument(
+        '-l', '--list', dest='list', action='store_true', help="List plugins")
+    group_action.add_argument(
+        '-h', '--help', dest='help', action='store_true',
+        help="Show this help and exit")
 
     # Host arguments
     group_main = parser.add_argument_group('Target host switchers')
-    group_main.add_argument('-s', '--hosts', dest='hosts', nargs='+', help="Hosts with running smokerd (default localhost)")
+    group_main.add_argument(
+        '-s', '--hosts', dest='hosts', nargs='+',
+        help="Hosts with running smokerd (default localhost)")
 
     # Filtering options
     # List of plugins
     group_filters = parser.add_argument_group('Filters')
-    group_filters.add_argument('-p', '--plugins', dest='plugins', nargs='+', help="Filter plugins by names, can't be used with --filter option")
-    group_filters.add_argument('--exclude-plugins', dest='exclude_plugins', nargs='+', help="Exclude plugins by names")
+    group_filters.add_argument(
+        '-p', '--plugins', dest='plugins', nargs='+',
+        help="Filter plugins by name")
+    group_filters.add_argument(
+        '--exclude-plugins', dest='exclude_plugins', nargs='+',
+        help="Exclude plugins by names")
 
     # Other filters
-    group_filters.add_argument('--filter', dest='filter', default=[], nargs='+', help="Filter plugins by it's parameters, eg. --filter 'Category connectors'")
-    group_filters.add_argument('--exclude', action='store_true', help="Negative filters (exclude) - currently works only for one filter")
-    group_filters.add_argument('--category', help="Filter plugins by Category parameter")
-    group_filters.add_argument('--component', help="Filter plugins by Component parameter (eg. server)")
-    group_filters.add_argument('--health', action='store_true', help="Filter plugins by Type healthCheck")
-    group_filters.add_argument('--smoke', action='store_true', help="Filter plugins by Type smokeTest")
+    group_filters.add_argument(
+        '--filter', dest='filter', default=[], nargs='+',
+        help=("Filter plugins by it's parameters, "
+              "eg. --filter 'Category connectors'"))
+    group_filters.add_argument(
+        '--exclude', action='store_true',
+        help=("Negative filters (exclude) - currently works only "
+              "for one filter"))
+    group_filters.add_argument(
+        '--category', help="Filter plugins by Category parameter")
+    group_filters.add_argument(
+        '--component',
+        help="Filter plugins by Component parameter (eg. server)")
+    group_filters.add_argument(
+        '--health', action='store_true',
+        help="Filter plugins by Type healthCheck")
+    group_filters.add_argument(
+        '--smoke', action='store_true',
+        help="Filter plugins by Type smokeTest")
 
     # Plugin state filters
-    group_filters.add_argument('--filter-status', dest='filter_status', default=[], nargs='+', help="Filter plugins by it's state, eg. --filter-state ERROR WARN")
-    group_filters.add_argument('--nook', dest='state_nook', action='store_true', help="Only non-OK plugins (ERROR, WARN, UNKNOWN). Can't be used together with --filter-state")
-    group_filters.add_argument('--error', dest='state_error', action='store_true', help="Only ERROR. Can't be used together with --filter-state")
-    group_filters.add_argument('--warn', '--warning', dest='state_warn', action='store_true', help="Only WARN. Can't be used together with --filter-state")
-    group_filters.add_argument('--unknown', dest='state_unknown', action='store_true', help="Only UNKNOWN. Can't be used together with --filter-state")
-    group_filters.add_argument('--ok', dest='state_ok', action='store_true', help="Only OK. Can't be used together with --filter-state")
+    group_filters.add_argument(
+        '--filter-status', dest='filter_status', default=[], nargs='+',
+        help="Filter plugins by it's state, eg. --filter-state ERROR WARN")
+    group_filters.add_argument(
+        '--nook', dest='state_nook', action='store_true',
+        help=("Only non-OK plugins (ERROR, WARN, UNKNOWN). "
+              "Can't be used together with --filter-state"))
+    group_filters.add_argument(
+        '--error', dest='state_error', action='store_true',
+        help="Only ERROR. Can't be used together with --filter-state")
+    group_filters.add_argument(
+        '--warn', '--warning', dest='state_warn', action='store_true',
+        help="Only WARN. Can't be used together with --filter-state")
+    group_filters.add_argument(
+        '--unknown', dest='state_unknown', action='store_true',
+        help="Only UNKNOWN. Can't be used together with --filter-state")
+    group_filters.add_argument(
+        '--ok', dest='state_ok', action='store_true',
+        help="Only OK. Can't be used together with --filter-state")
 
     # Output switchers
     group_output = parser.add_argument_group('Output switchers')
-    group_output.add_argument('-o', '--pretty', dest='pretty', default='normal', help="Output format: minimal / normal / long / full / raw / json / tap / xml")
-    group_output.add_argument('--no-colors', dest='no_colors', action='store_true', help="Don't use colors in output")
-    group_output.add_argument('--no-progress', dest='no_progress', action='store_true', help="Don't show progress bar")
-    group_output.add_argument('-v', '--verbose', dest='verbose', action='store_true', help="Be verbose")
-    group_output.add_argument('-d', '--debug', dest='debug', action='store_true', help="Debug output")
-    group_output.add_argument('--junit-config-file', dest='junit_config_file', help="Name of configuration file for junit xml formatter")
+    group_output.add_argument(
+        '-o', '--pretty', dest='pretty', default='normal',
+        help=("Output format: minimal / normal / long / full / raw / json / "
+              "tap / xml"))
+    group_output.add_argument(
+        '--no-colors', dest='no_colors', action='store_true',
+        help="Don't use colors in output")
+    group_output.add_argument(
+        '--no-progress', dest='no_progress', action='store_true',
+        help="Don't show progress bar")
+    group_output.add_argument(
+        '-v', '--verbose', dest='verbose', action='store_true',
+        help="Be verbose")
+    group_output.add_argument(
+        '-d', '--debug', dest='debug', action='store_true',
+        help="Debug output")
+    group_output.add_argument(
+        '--junit-config-file', dest='junit_config_file',
+        help="Name of configuration file for junit xml formatter")
 
     _add_plugin_arguments(parser)
     args = parser.parse_args()
@@ -391,11 +442,6 @@ def main():
         lg.error("Invalid pretty output %s" % args.pretty)
         sys.exit(1)
 
-    # Plugins list and filter can't be set together
-    if args.filter and args.plugins:
-        lg.error("Plugins list and filters can't be used together")
-        sys.exit(1)
-
     # Setup custom filters
     if args.category:
         args.filter.append('Category %s' % args.category)
@@ -426,7 +472,12 @@ def main():
                 sys.exit(1)
 
             filters.append(filter)
-    elif args.plugins:
+
+    if filters and args.plugins:
+        lg.warn("Plugin filter and plugin list used together. "
+                "Only plugins matching both will be displayed.")
+
+    if args.plugins:
         filters.append(args.plugins)
 
     # Setup state filters
@@ -462,7 +513,8 @@ def main():
 
     # Initialize Client
     client = Client(hosts)
-    plugins = client.get_plugins(filters, filters_negative=args.exclude, exclude_plugins=args.exclude_plugins)
+    plugins = client.get_plugins(filters, filters_negative=args.exclude,
+                                 exclude_plugins=args.exclude_plugins)
 
     # No plugins found
     if not plugins:
@@ -488,7 +540,8 @@ def main():
     # Force plugins run
     # set progress=False if --no-progress parameter is set
     if args.force:
-        plugins = client.force_run(plugins, progress=False if args.no_progress == True else True)
+        plugins = client.force_run(
+            plugins, progress=not args.no_progress)
 
     # Print raw output
     if args.pretty == 'raw':
@@ -499,7 +552,8 @@ def main():
         # We need custom encoder to encode datetime objects
         class JSONEncoder(simplejson.JSONEncoder):
             """
-            JSON encoder that converts datetime.datetime object to isoformat string
+            JSON encoder that converts datetime.datetime object to isoformat
+            string
             """
             def default(self, obj):
                 if isinstance(obj, datetime.datetime):
@@ -622,7 +676,8 @@ def dump_tap(plugins):
             tap_plugin = TapTest(plugin['name'], plugin_ok, messages)
             tap_host.add_subtest(tap_plugin)
 
-            if plugin['lastResult'] and plugin['lastResult']['componentResults']:
+            if (plugin['lastResult'] and
+                    plugin['lastResult']['componentResults']):
                 # For each component result
                 for component in plugin['lastResult']['componentResults']:
                     component = component['componentResult']
@@ -637,7 +692,8 @@ def dump_tap(plugins):
                         if component['messages']:
                             messages = component['messages']
 
-                    tap_component = TapTest(component['name'], component_ok, messages)
+                    tap_component = TapTest(component['name'], component_ok,
+                                            messages)
                     tap_plugin.add_subtest(tap_component)
 
     return tap.dump()
