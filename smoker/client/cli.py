@@ -169,7 +169,7 @@ def main():
     # Filtering options
     # List of plugins
     group_filters = parser.add_argument_group('Filters')
-    group_filters.add_argument('-p', '--plugins', dest='plugins', nargs='+', help="Filter plugins by names, can't be used with --filter option")
+    group_filters.add_argument('-p', '--plugins', dest='plugins', nargs='+', help="Filter plugins by name")
     group_filters.add_argument('--exclude-plugins', dest='exclude_plugins', nargs='+', help="Exclude plugins by names")
 
     # Other filters
@@ -391,11 +391,6 @@ def main():
         lg.error("Invalid pretty output %s" % args.pretty)
         sys.exit(1)
 
-    # Plugins list and filter can't be set together
-    if args.filter and args.plugins:
-        lg.error("Plugins list and filters can't be used together")
-        sys.exit(1)
-
     # Setup custom filters
     if args.category:
         args.filter.append('Category %s' % args.category)
@@ -426,7 +421,12 @@ def main():
                 sys.exit(1)
 
             filters.append(filter)
-    elif args.plugins:
+
+    if filters and args.plugins:
+        lg.warn("Plugin filter and plugin list used together. "
+                "Only plugins matching both will be displayed.")
+
+    if args.plugins:
         filters.append(args.plugins)
 
     # Setup state filters
