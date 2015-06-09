@@ -18,7 +18,7 @@ else:
 # Parameters for build
 params = {
     'name': name,
-    'version': '2.0.3',
+    'version': '2.0.4',
     'packages': [
         'smoker',
         'smoker.server',
