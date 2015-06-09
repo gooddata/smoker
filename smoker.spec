@@ -1,7 +1,7 @@
 %global with_check 0
 
 Name:		smoker
-Version:	2.0.3
+Version:	2.0.4
 Release:	1%{?dist}
 Epoch:		1
 Summary:	Smoke Testing Framework
