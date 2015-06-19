@@ -18,12 +18,6 @@ import smoker.util.command
 
 lg = logging.getLogger('smokerd.pluginmanager')
 
-# Initialize multiprocessing semamphore, by default limit by
-# number of online CPUs + 2
-semaphore_count = int(os.sysconf('SC_NPROCESSORS_ONLN')) + 2
-lg.info("Plugins will run approximately at %s parallel processes" % semaphore_count)
-semaphore = multiprocessing.Semaphore(semaphore_count)
-
 
 def alarm_handler(signum, frame):
     raise PluginExecutionTimeout
@@ -48,7 +42,8 @@ class PluginManager(object):
     # so fill it by None
     processes.append(None)
 
-    def __init__(self, plugins=None, actions=None, templates=None):
+    def __init__(self, plugins=None, actions=None, templates=None,
+                 semaphore_count=None):
         """
         PluginManager constructor
          * load plugins/templates/actions configuration
@@ -59,6 +54,15 @@ class PluginManager(object):
         self.conf_templates = templates
 
         self.stopping = False
+
+        # Initialize multiprocessing semamphore, by default limit by
+        # number of online CPUs + 2
+        if not semaphore_count:
+            semaphore_count = int(os.sysconf('SC_NPROCESSORS_ONLN')) + 2
+        lg.info("Plugins will run approximately at %s parallel processes",
+                semaphore_count)
+        global semaphore
+        semaphore = multiprocessing.Semaphore(semaphore_count)
 
         # Load Plugin objects
         self.load_plugins()

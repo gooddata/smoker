@@ -162,6 +162,9 @@ class Smokerd(object):
             lg.error('No configured plugins')
             self._shutdown(exitcode=1)
 
+        if 'nr_concurrent_plugins' in self.conf:
+            config['semaphore_count'] = self.conf['nr_concurrent_plugins']
+
         try:
             self.pluginmgr = PluginManager(**config)
         except Exception as e:
