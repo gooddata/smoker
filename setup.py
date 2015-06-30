@@ -18,7 +18,7 @@ else:
 # Parameters for build
 params = {
     'name': name,
-    'version': '2.0.5',
+    'version': '2.0.6',
     'packages': [
         'smoker',
         'smoker.server',
@@ -42,7 +42,7 @@ params = {
     'maintainer': 'Filip Pytloun',
     'maintainer_email': 'filip@pytloun.cz',
     'description': 'Smoke Testing Framework',
-    'long_description': open('DESCRIPTION.md').read(),
+    'long_description': open('smoker/DESCRIPTION.md').read(),
     'classifiers': [
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
@@ -64,7 +64,8 @@ params = {
         (INITDIR, ['rc.d/init.d/smokerd']),
         (DOCDIR, ['etc/smokerd-example.yaml', 'etc/smokercli-example.yaml'])
     ],
-    'test_suite': 'tests'
+    'test_suite': 'tests',
+    'package_data': {'smoker': ['DESCRIPTION.md']}
 }
 
 setup(**params)
