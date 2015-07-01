@@ -1,7 +1,7 @@
 %global with_check 0
 
 Name:		smoker
-Version:	2.0.7
+Version:	2.0.8
 Release:	1%{?dist}
 Epoch:		1
 Summary:	Smoke Testing Framework
@@ -34,7 +34,7 @@ for it's command-line or other client.
 %install
 %{__rm} -rf %{buildroot}
 %{__python} setup.py install -O1 --skip-build --root %{buildroot}
-install -m 644 -D rc.d/init.d/smokerd %{buildroot}/etc/rc.d/init.d/smokerd
+install -m 755 -D rc.d/init.d/smokerd %{buildroot}/etc/rc.d/init.d/smokerd
 mkdir -p %{buildroot}/usr/share/doc/smoker/
 install -m 644 etc/* %{buildroot}/usr/share/doc/smoker/
 
