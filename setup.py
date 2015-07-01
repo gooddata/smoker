@@ -6,9 +6,6 @@ import os
 import sys
 from setuptools import setup
 
-DOCDIR = '/usr/share/doc/smoker'
-INITDIR = '/etc/rc.d/init.d'
-
 # This package is named gdc-smoker on Pypi (register or upload actions)
 if 'upload' in sys.argv or 'register' in sys.argv:
     name = 'gdc-smoker'
@@ -18,7 +15,7 @@ else:
 # Parameters for build
 params = {
     'name': name,
-    'version': '2.0.6',
+    'version': '2.0.7',
     'packages': [
         'smoker',
         'smoker.server',
@@ -60,10 +57,6 @@ params = {
     'platforms': ['POSIX'],
     'provides': ['smoker'],
     'install_requires': ['PyYAML', 'argparse', 'simplejson', 'psutil', 'setproctitle', 'Flask-RESTful'],
-    'data_files': [
-        (INITDIR, ['rc.d/init.d/smokerd']),
-        (DOCDIR, ['etc/smokerd-example.yaml', 'etc/smokercli-example.yaml'])
-    ],
     'test_suite': 'tests',
     'package_data': {'smoker': ['DESCRIPTION.md']}
 }
