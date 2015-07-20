@@ -41,7 +41,7 @@ def init(name='', level=logging.WARN, syslog=True, console=True,
     global lg
 
     if os.path.exists(config_file):
-        logging.config.fileConfig(config_file)
+        logging.config.fileConfig(config_file, disable_existing_loggers=False)
 
     lg = logging.getLogger(name)
     lg.setLevel(level)
