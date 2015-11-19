@@ -3,9 +3,11 @@
 # Copyright (C) 2007-2015, GoodData(R) Corporation. All rights reserved
 
 from multiprocessing import Queue
-from smoker.server.plugins import PluginManager, Plugin, PluginWorker
-import unittest
+from tempfile import mkstemp
 import time
+import unittest
+
+from smoker.server.plugins import PluginManager, Plugin, PluginWorker
 
 
 class TestPluginManager(unittest.TestCase):
@@ -57,6 +59,31 @@ class TestPlugin(unittest.TestCase):
             'Interval': 5,
             'Command': 'uptime',
             'Timeout': 5
+        }
+
+        foo = Plugin('unittest', options)
+        foo.forced = True
+        foo.run()
+        time.sleep(0.5)
+        foo.collect_new_result()
+
+
+class TestPluginMaintenance(unittest.TestCase):
+    """
+    Unit tests for the Plugin class
+    """
+
+    def setUp(self):
+        self.lockfile = mkstemp()
+
+    def test_plugin_uptime(self):
+        options = {
+            'Category': 'system',
+            'Enabled': True,
+            'Interval': 5,
+            'Command': 'uptime',
+            'Timeout': 5,
+            'MaintenanceLock': self.lockfile
         }
 
         foo = Plugin('unittest', options)
