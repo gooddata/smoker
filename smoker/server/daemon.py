@@ -189,8 +189,9 @@ class Smokerd(object):
 
         if hasattr(signal, 'SIGTERM'):
             signal.signal(signal.SIGTERM, self._shutdown)
-        # API server loop now runs in a separate process and we don't want
-        # to terminate to keep an instance of pluginmanager
+
+        if hasattr(signal, 'SIGHUP'):
+            signal.signal(signal.SIGHUP, self._reopen_logfiles)
 
         self._watchdog()
 
@@ -212,14 +213,36 @@ class Smokerd(object):
     def _restart_api_server(self):
         self.server.terminate()
         self.server.join()
-        self.server = RestServer(self.conf['bind_host'], self.conf['bind_port'], self)
+        self.server = RestServer(
+            self.conf['bind_host'], self.conf['bind_port'], self)
         self.server.start()
+
+    def _redirect_standard_io(self):
+        sys.stdout.flush()
+        sys.stderr.flush()
+        try:
+            si = file(self.conf['stdin'], 'r')
+            so = file(self.conf['stdout'], 'a+')
+            se = file(self.conf['stderr'], 'a+', 0)
+        except Exception as e:
+            lg.error("Can't open configured output: %s" % e)
+            lg.exception(e)
+            sys.exit(1)
+        os.dup2(si.fileno(), sys.stdin.fileno())
+        os.dup2(so.fileno(), sys.stdout.fileno())
+        os.dup2(se.fileno(), sys.stderr.fileno())
+
+    def _reopen_logfiles(self, signum=None, frame=None):
+        self._redirect_standard_io()
+        lg.info("received SIGHUP, restarting the REST API server")
+        self._restart_api_server()
 
     def stop(self):
         """
         Kill running daemon
 
-        Use sys.exit() here instead of self._shutdown(), because it's executed from separate process
+        Use sys.exit() here instead of self._shutdown(), because
+        it's executed from separate process
         """
         if not os.path.isfile(self.conf['pidfile']):
             lg.error("PID file doesn't exist! Daemon not running?")
@@ -263,20 +286,7 @@ class Smokerd(object):
             if not os.path.exists(path):
                 os.mkdir(path)
 
-        # Redirect standard I/O
-        sys.stdout.flush()
-        sys.stderr.flush()
-        try: 
-            si = file(self.conf['stdin'], 'r')
-            so = file(self.conf['stdout'], 'a+')
-            se = file(self.conf['stderr'], 'a+', 0)
-        except Exception as e:
-            lg.error("Can't open configured output: %s" % e)
-            lg.exception(e)
-            sys.exit(1)
-        os.dup2(si.fileno(), sys.stdin.fileno())
-        os.dup2(so.fileno(), sys.stdout.fileno())
-        os.dup2(se.fileno(), sys.stderr.fileno())
+        self._redirect_standard_io()
 
         # Save PID into pidfile
         try:
