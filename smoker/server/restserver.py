@@ -7,11 +7,14 @@ Module providing base http server for smokerd REST API
 from flask import Flask, request, make_response
 from flask.ext.restful import Api, Resource, abort
 import json
+import logging
 import multiprocessing
 import setproctitle
 import socket
 
 from smoker.server import exceptions
+
+lg = logging.getLogger('smokerd.apiserver')
 
 # need to keep the daemon instance and common functions at module level since
 # there's no other way how to pass the to Flask_restful class methods
@@ -321,4 +324,8 @@ class RestServer(multiprocessing.Process):
 
     def run(self):
         setproctitle.setproctitle('smokerd rest api server')
-        self.app.run(self.host, self.port)
+        try:
+            self.app.run(self.host, self.port)
+        except Exception:
+            lg.exception("Error occured within the REST API server")
+            raise
