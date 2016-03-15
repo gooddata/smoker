@@ -638,7 +638,7 @@ class PluginWorker(multiprocessing.Process):
             # Execute external command
             if self.params['Action']['Command']:
                 # Add parameters to command with format
-                params = dict(self.params, **result)
+                params = dict(self.params, **result.result)
                 params = self.escape(params)
 
                 try:

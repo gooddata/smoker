@@ -11,6 +11,9 @@
 	- [Example usage](#example-usage)
 		- [Configuration](#configuration)
 		- [Usage](#usage-1)
+	- [Testing](#testing)
+		- [Dependencies](#dependencies)
+		- [Usage](#usage-2)
 	- [Conclusion](#conclusion)
 
 Smoker
@@ -262,6 +265,27 @@ Seems we have fixed the problem, so the same command will return nothing during 
 management~# smokercli.py -s server1 server2 --smoke --error -f
 ERROR: No plugins found
 ```
+
+Testing
+-------------
+If you want to make sure any change in Smoker won't affect your platform, you can run unittest on tests/server/test_*.py.
+### Dependencies
+Unit tests on smoker require py.test
+
+With PIP:
+
+	pip install pytest
+
+### Usage
+Run unit test file with command:
+
+	py.test tests/server/test_*.py -vv
+
+Or run all test files with command:
+
+	py.test
+
+pytest follows [standard test discovery](https://pytest.org/latest/goodpractices.html#conventions-for-python-test-discovery)
 
 Conclusion
 ----------
