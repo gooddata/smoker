@@ -28,19 +28,6 @@ class PluginManager(object):
     PluginManager provides management and
     access to plugins
     """
-    # Configured plugins/templates/actions
-    conf_plugins   = None
-    conf_actions   = None
-    conf_templates = None
-
-    # Plugin objects
-    plugins = {}
-
-    # Processes
-    processes = []
-    # We don't want to have process ID 0 (first index)
-    # so fill it by None
-    processes.append(None)
 
     def __init__(self, plugins=None, actions=None, templates=None,
                  semaphore_count=None):
@@ -52,6 +39,13 @@ class PluginManager(object):
         self.conf_plugins   = plugins
         self.conf_actions   = actions
         self.conf_templates = templates
+
+        self.plugins = {}
+
+        self.processes = []
+        # We don't want to have process ID 0 (first index)
+        # so fill it by None
+        self.processes.append(None)
 
         self.stopping = False
 
