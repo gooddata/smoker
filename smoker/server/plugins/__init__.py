@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
+import copy
 import datetime
 import logging
 import multiprocessing
@@ -132,7 +133,7 @@ class PluginManager(object):
             lg.error("No plugins loaded!")
             raise NoRunningPlugins("No plugins loaded!")
 
-    def load_plugin(self, plugin, options):
+    def load_plugin(self, plugin, opts):
         """
         Create and return Plugin object
         """
@@ -141,7 +142,7 @@ class PluginManager(object):
             template = self.get_template('BasePlugin')
         except:
             template = {}
-
+        options = copy.deepcopy(opts)
         # Plugin has template, load it's parent params
         if options.has_key('Template'):
             template_custom = self.get_template(options['Template'])
