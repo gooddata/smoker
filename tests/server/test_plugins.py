@@ -4,7 +4,12 @@
 
 import copy
 import datetime
+import lockfile
+import multiprocessing
+import os
+import psutil
 import pytest
+import re
 from smoker.server import exceptions as smoker_exceptions
 import smoker.server.plugins as server_plugins
 import time
@@ -486,3 +491,464 @@ class TestPlugin(object):
 
         assert len(plugin.result) == params['History']
         assert plugin.forced_result == plugin.result[-1]
+
+
+class TestPluginWorker(object):
+    """Unit tests for the PluginWorker class"""
+    action = {
+        'Command': 'hostname -f',
+        'Module': None,
+        'Timeout': 60
+    }
+    params_default = {
+        'Command': 'hostname',
+        'Module': None,
+        'Parser': None,
+        'uid': 'default',
+        'gid': 'default',
+        'MaintenanceLock': None,
+        'Timeout': 30,
+        'Action': None
+    }
+    queue = multiprocessing.Queue()
+
+    conf_worker = {
+        'name': 'Hostname',
+        'queue': queue,
+        'params': params_default,
+        'forced': False
+    }
+
+    def test_running_worker_process(self):
+        worker = server_plugins.PluginWorker(**self.conf_worker)
+        worker.run()
+        assert 'status' in worker.result and worker.result['status'] == 'OK'
+        assert 'info' in worker.result['messages']
+        assert worker.result['messages']['info'] == [os.uname()[1]]
+
+    def test_running_worker_process_title_should_be_changed(self):
+        expected = 'smokerd plugin Hostname'
+        worker = server_plugins.PluginWorker(**self.conf_worker)
+        worker.run()
+        procs = get_process_list()
+        assert expected in procs.values()
+
+    def test_drop_privileged_with_invalid_params(self):
+        test_params = {
+            'uid': 99999,
+            'gid': 99999
+        }
+        params = dict(self.params_default, **test_params)
+        worker = server_plugins.PluginWorker(name='Hostname',
+                                             queue=self.queue, params=params)
+        with pytest.raises(OSError) as exc_info:
+            worker.run()
+        assert 'Operation not permitted' in exc_info.value
+
+    def test_drop_privileged_with_invalid_params_type(self):
+        test_params = {
+            'uid': 'InvalidType',
+            'gid': 'InvalidType',
+        }
+        params = dict(self.params_default, **test_params)
+        worker = server_plugins.PluginWorker(name='Hostname',
+                                             queue=self.queue, params=params)
+        with pytest.raises(TypeError) as exc_info:
+            worker.run()
+        assert 'an integer is required' in exc_info.value
+
+    def test_run_worker_with_maintenance_lock(self):
+        expected_message = ['Skipped because of maintenance in progress']
+
+        maintenance_lock = os.getcwd() + random_string()
+        test_params = {'MaintenanceLock': maintenance_lock + '.lock'}
+        params = dict(self.params_default, **test_params)
+        lock = lockfile.FileLock(maintenance_lock)
+        with lock:
+            worker = server_plugins.PluginWorker(name='Hostname',
+                                                 queue=self.queue,
+                                                 params=params)
+            worker.run()
+            assert 'status' in worker.result
+            assert worker.result['status'] == 'WARN'
+            assert 'warn' in worker.result['messages']
+            assert worker.result['messages']['warn'] == expected_message
+
+    def test_run_invalid_command(self):
+        expected = 'InvalidCommand|command not found'
+        test_params = {
+            'Command': 'InvalidCommand'
+        }
+        params = dict(self.params_default, **test_params)
+        worker = server_plugins.PluginWorker(name='InvalidCommand',
+                                             queue=self.queue, params=params)
+        worker.run()
+        assert 'status' in worker.result and worker.result['status'] == 'ERROR'
+        assert 'warn' in worker.result['messages']
+        assert re.search(expected, worker.result['messages']['error'][0])
+
+    def test_run_command_with_parser(self):
+        expected = {
+            'Unit tests': {
+                'status': 'OK',
+                'messages': {
+                    'info': ['GoodData'],
+                    'warn': [],
+                    'error': []
+                }
+            }
+        }
+        test_params = {
+            'Command': 'echo "GoodData Smoker"',
+            'Parser': 'tests.server.smoker_test_resources.smokerparser'
+        }
+        params = dict(self.params_default, **test_params)
+        worker = server_plugins.PluginWorker(name='Hostname',
+                                             queue=self.queue, params=params)
+        worker.run()
+        assert 'status' in worker.result and worker.result['status'] == 'OK'
+        assert 'componentResults' in worker.result
+        assert worker.result['componentResults'] == expected
+        assert 'messages' in worker.result and not worker.result['messages']
+
+    def test_run_command_with_invalid_parser_path(self):
+        expected_info = ['GoodData Smoker']
+        expected_error = ['Parser run failed: No module named InvalidParser']
+        test_params = {
+            'Command': 'echo "GoodData Smoker"',
+            'Parser': 'InvalidParser'
+        }
+        params = dict(self.params_default, **test_params)
+        worker = server_plugins.PluginWorker(name='Hostname',
+                                             queue=self.queue, params=params)
+        worker.run()
+        assert 'status' in worker.result and worker.result['status'] == 'ERROR'
+        assert 'info' and 'error' in worker.result['messages']
+        assert worker.result['messages']['info'] == expected_info
+        assert worker.result['messages']['error'] == expected_error
+
+    def test_run_parser(self):
+        expected = {
+            'Unit tests': {
+                'status': 'OK',
+                'messages': {
+                    'info': ['GoodData'],
+                    'warn': [],
+                    'error': []
+                }
+            }
+        }
+        test_params = {
+            'Command': 'echo "Output : GoodData Smoker"',
+            'Parser': 'tests.server.smoker_test_resources.smokerparser'
+        }
+        params = dict(self.params_default, **test_params)
+        worker = server_plugins.PluginWorker(name='Hostname',
+                                             queue=self.queue, params=params)
+        result = worker.run_parser(stdout='GoodData', stderr='').result
+
+        assert 'status' in result and result['status'] == 'OK'
+        assert result['componentResults'] == expected
+        assert 'messages' in result and not result['messages']
+        assert (result['componentResults']['Unit tests']['status'] ==
+                result['status'])
+
+    def test_run_invalid_parser(self):
+        test_params = {
+            'Command': 'echo "Output : GoodData Smoker"',
+            'Parser': 'InvalidParser'
+        }
+        params = dict(self.params_default, **test_params)
+        worker = server_plugins.PluginWorker(name='Hostname',
+                                             queue=self.queue, params=params)
+
+        with pytest.raises(ImportError) as exc_info:
+            worker.run_parser(stdout='GoodData', stderr='')
+        assert 'No module named InvalidParser' in exc_info.value
+
+    def test_run_module(self):
+        worker = server_plugins.PluginWorker(**self.conf_worker)
+        module = 'tests.server.smoker_test_resources.smokermodule'
+        result = worker.run_module(module).result
+        assert 'status' in result and result['status'] == 'OK'
+        assert 'info' in result['messages']
+        assert result['messages']['info'] == [' '.join(os.uname())]
+
+    def test_run_invalid_module(self):
+        worker = server_plugins.PluginWorker(**self.conf_worker)
+        module = 'InvalidModule'
+        with pytest.raises(ImportError) as exc_info:
+            worker.run_module(module)
+        assert 'No module named InvalidModule' in exc_info.value
+
+    def test_escape(self):
+        worker = server_plugins.PluginWorker(**self.conf_worker)
+
+        tbe_str = 'string \ '
+        assert worker.escape(tbe=tbe_str) == re.escape(tbe_str)
+
+        tbe_dict = {'dict': '\ "" '}
+        expected_dict = {'dict': '\\\\\\ \\"\\"\\ '}
+        assert worker.escape(tbe=tbe_dict) == expected_dict
+
+        tbe_list = [1, '[Good]Data', '/\G']
+        expected_list = [1, '\\[Good\\]Data', '\\/\\\\G']
+        assert worker.escape(tbe=tbe_list) == expected_list
+
+        tbe_tuple = {1, '[Good]Data', '/\G'}
+        with pytest.raises(Exception) as exc_info:
+            worker.escape(tbe=tbe_tuple)
+        assert 'Unknown data type' in exc_info.value
+
+    def test_get_params(self):
+        worker = server_plugins.PluginWorker(**self.conf_worker)
+        assert worker.get_param('Command') == 'hostname'
+        assert worker.get_param('Timeout') == 30
+        assert not worker.get_param('MaintenanceLock')
+        assert not worker.get_param('InvalidParamater')
+
+
+class TestResult(object):
+    """Unit tests for the PluginWorker class"""
+
+    result_to_validate = {
+        'status': 'OK',
+        'messages': {
+            'info': [],
+            'warn': [],
+            'error': []
+        },
+        'lastRun': datetime.datetime.now().isoformat(),
+        'componentResults': None,
+        'action': None,
+        'forced': False
+    }
+
+    def test_set_status(self):
+        result = server_plugins.Result()
+        result.set_status('OK')
+        assert result.result['status'] == 'OK'
+        result.set_status('ERROR')
+        assert result.result['status'] == 'ERROR'
+        result.set_status('WARN')
+        assert result.result['status'] == 'WARN'
+
+        for status in ['OK', 'WARN', 'ERROR']:
+            component_results = {
+                'Unit tests': {
+                    'status': status,
+                    'messages': {
+                        'info': ['GoodData'],
+                        'warn': [],
+                        'error': []
+                    }
+                }
+            }
+            result = server_plugins.Result()
+            result.result['componentResults'] = component_results
+            result.set_status()
+            assert status == result.result['status']
+
+    def test_set_invalid_status(self):
+        result = server_plugins.Result()
+        expected = 'Can\'t generate overall status without component results'
+        with pytest.raises(Exception) as exc_info:
+            result.set_status()
+        assert expected in exc_info.value
+
+        expected = 'Status has to be OK, ERROR or WARN'
+        with pytest.raises(smoker_exceptions.InvalidArgument) as exc_info:
+            result.set_status('InvalidStatus')
+        assert expected in exc_info.value
+
+    def test_add_msg(self):
+        for level in ['info', 'warn', 'error']:
+            result = server_plugins.Result()
+            result.add_msg(level, 'Gooddata')
+            result.add_msg(level, 'Smoker')
+            result.add_msg(level, level)
+            expected_info = ['Gooddata', 'Smoker', level]
+            assert 'status' in result.result and not result.result['status']
+            assert level in result.result['messages']
+            assert expected_info == result.result['messages'][level]
+
+    def test_add_msg_with_invalid_level(self):
+        result = server_plugins.Result()
+        with pytest.raises(smoker_exceptions.InvalidArgument) as exc_info:
+            result.add_msg('InvalidLevel', 'Gooddata')
+        assert 'Level has to be info, error or warn' in exc_info.value
+
+    def test_add_msg_with_multiline_is_true(self):
+        for level in ['info', 'warn', 'error']:
+            result = server_plugins.Result()
+            result.add_msg(level, 'Gooddata\nSmoker', multiline=True)
+            result.add_msg(level, level)
+            expected_info = ['Gooddata\nSmoker', level]
+            assert 'status' in result.result and not result.result['status']
+            assert level in result.result['messages']
+            assert expected_info == result.result['messages'][level]
+
+    def test_add_msg_with_multiline_is_false(self):
+        for level in ['info', 'warn', 'error']:
+            result = server_plugins.Result()
+            result.add_msg(level, 'Gooddata\nSmoker')
+            result.add_msg(level, level)
+            expected_info = ['Gooddata', 'Smoker', level]
+            assert 'status' in result.result and not result.result['status']
+            assert level in result.result['messages']
+            assert expected_info == result.result['messages'][level]
+
+    def test_validate_status(self):
+        for status in ['OK', 'ERROR', 'WARN']:
+            result = server_plugins.Result()
+            result.result = copy.deepcopy(self.result_to_validate)
+            result.result['status'] = status
+            result.validate()
+            assert result.validated
+
+    def test_validate_invalid_status(self):
+        expected = 'Result status has to be OK, ERROR or WARN, ' \
+                   'not InvalidStatus'
+        result = server_plugins.Result()
+        result.result = copy.deepcopy(self.result_to_validate)
+        result.result['status'] = 'InvalidStatus'
+        with pytest.raises(smoker_exceptions.ValidationError) as exc_info:
+            result.validate()
+        assert expected in exc_info.value
+
+    def test_validate_message_should_be_dict(self):
+        result = server_plugins.Result()
+        result.result = copy.deepcopy(self.result_to_validate)
+        result.result['messages'] = str()
+        with pytest.raises(smoker_exceptions.ValidationError) as exc_info:
+            result.validate()
+        expected = 'Result message has to be a dictionary or None, not str'
+        assert expected in exc_info.value
+
+    def test_validate_level_message_should_be_list(self):
+        for level in ['info', 'error', 'warn']:
+            result = server_plugins.Result()
+            result.result = copy.deepcopy(self.result_to_validate)
+            result.result['messages'][level] = str()
+            with pytest.raises(smoker_exceptions.ValidationError) as exc_info:
+                result.validate()
+            expected = 'Can\'t validate message: Result message type %s has ' \
+                       'to be a list, not str' % level
+            assert expected in exc_info.value
+
+    def test_validate_level_message_output_should_be_string(self):
+        for level in ['info', 'error', 'warn']:
+            result = server_plugins.Result()
+            result.result = copy.deepcopy(self.result_to_validate)
+            result.result['messages'][level] = ['Gooddata', ['Invalid_Data']]
+            with pytest.raises(smoker_exceptions.ValidationError) as exc_info:
+                result.validate()
+            expected = 'Can\'t validate message: Result message type %s has ' \
+                       'to be a string, not list' % level
+            assert expected in exc_info.value
+
+    def test_validate_component_result_should_be_dict(self):
+        expected = 'Component result must be dictionary'
+        result = server_plugins.Result()
+        result.result = copy.deepcopy(self.result_to_validate)
+        result.result['componentResults'] = list()
+        with pytest.raises(smoker_exceptions.ValidationError) as exc_info:
+            result.validate()
+        assert expected in exc_info.value
+
+    def test_validate_component_result_should_have_message(self):
+        component_results = {
+            'Unit tests': {
+                'status': 'OK',
+            }
+        }
+        expected = 'Component Unit tests doesn\'t have message'
+        result = server_plugins.Result()
+        result.result = copy.deepcopy(self.result_to_validate)
+        result.result['componentResults'] = component_results
+        with pytest.raises(smoker_exceptions.ValidationError) as exc_info:
+            result.validate()
+        assert expected in exc_info.value
+
+    def test_validate_component_result_should_have_status(self):
+        component_results = {
+            'Unit tests': {
+                'messages': {
+                    'info': ['GoodData'],
+                    'warn': [],
+                    'error': []
+                }
+            }
+        }
+        expected = 'Component Unit tests doesn\'t have status'
+        result = server_plugins.Result()
+        result.result = copy.deepcopy(self.result_to_validate)
+        result.result['componentResults'] = component_results
+        with pytest.raises(smoker_exceptions.ValidationError) as exc_info:
+            result.validate()
+        assert expected in exc_info.value
+
+    def test_validate_action_result_should_be_dict(self):
+        expected = 'Action result must be dictionary'
+        result = server_plugins.Result()
+        result.result = copy.deepcopy(self.result_to_validate)
+        result.result['action'] = str()
+        with pytest.raises(smoker_exceptions.ValidationError) as exc_info:
+            result.validate()
+        assert expected in exc_info.value
+
+    def test_validate_action_result_should_have_message(self):
+        action_result = {
+            'status': 'OK',
+        }
+        expected = 'Action doesn\'t have message'
+        result = server_plugins.Result()
+        result.result = copy.deepcopy(self.result_to_validate)
+        result.result['action'] = action_result
+        with pytest.raises(smoker_exceptions.ValidationError) as exc_info:
+            result.validate()
+        assert expected in exc_info.value
+
+    def test_validate_action_result_should_have_status(self):
+        action_result = {
+            'messages': {
+                'info': [],
+                'warn': [],
+                'error': []
+            }
+        }
+        expected = 'Action doesn\'t have status'
+        result = server_plugins.Result()
+        result.result = copy.deepcopy(self.result_to_validate)
+        result.result['action'] = action_result
+        with pytest.raises(smoker_exceptions.ValidationError) as exc_info:
+            result.validate()
+        assert expected in exc_info.value
+
+    def test_set_result(self):
+        result_to_validate = copy.deepcopy(self.result_to_validate)
+        result = server_plugins.Result()
+        result.set_result(result_to_validate, validate=True)
+        assert result.validated
+
+    def test_get_result(self):
+        result = server_plugins.Result()
+        result.result = copy.deepcopy(self.result_to_validate)
+        assert not result.validated
+        result.get_result()
+        assert result.validated
+
+
+def get_process_list():
+    procs = dict()
+    for proc in psutil.process_iter():
+        try:
+            pinfo = proc.as_dict(attrs=['pid', 'cmdline'])
+            procs[pinfo['pid']] = pinfo['cmdline'][0]
+        except (psutil.NoSuchProcess, IndexError, TypeError):
+            pass
+    return procs
+
+
+def random_string():
+    return str(datetime.datetime.now().strftime("%y%m%d_%H%M%S%f"))
