@@ -575,7 +575,7 @@ class TestPluginWorker(object):
             assert worker.result['messages']['warn'] == expected_message
 
     def test_run_invalid_command(self):
-        expected_message = ['/bin/sh: 1: InvalidCommand: not found']
+        expected = 'InvalidCommand|command not found'
         test_params = {
             'Command': 'InvalidCommand'
         }
@@ -585,7 +585,7 @@ class TestPluginWorker(object):
         worker.run()
         assert 'status' in worker.result and worker.result['status'] == 'ERROR'
         assert 'warn' in worker.result['messages']
-        assert worker.result['messages']['error'] == expected_message
+        assert re.search(expected, worker.result['messages']['error'][0])
 
     def test_run_command_with_parser(self):
         expected = {
@@ -943,9 +943,9 @@ def get_process_list():
     procs = dict()
     for proc in psutil.process_iter():
         try:
-            pinfo = proc.as_dict(attrs=['pid', 'name'])
-            procs[pinfo['pid']] = pinfo['name']
-        except psutil.NoSuchProcess:
+            pinfo = proc.as_dict(attrs=['pid', 'cmdline'])
+            procs[pinfo['pid']] = pinfo['cmdline'][0]
+        except (psutil.NoSuchProcess, IndexError, TypeError):
             pass
     return procs
 
