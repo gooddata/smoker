@@ -69,10 +69,11 @@ def main():
     # No plugin found
     if not plugins:
         if args.plugin:
-            nagios.exit_unknown("plugin %s not found" % args.plugin)
+            message = "plugin %s not found" % args.plugin
         else:
-            nagios.exit_ok("no plugin found by category %s and component %s, health: %s" %
-                           (args.category, args.component, args.health))
+            message = "no plugin found by category %s and component %s, health: %s" % \
+                      (args.category, args.component, args.health)
+        nagios.exit_unknown(message)
 
     if args.force:
         plugins = client.force_run(plugins, progress=False)
