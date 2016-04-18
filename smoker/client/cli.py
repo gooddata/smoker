@@ -39,6 +39,10 @@ COLORS = {
     'gray' : '\033[0;37m',
 }
 
+EXIT_CODES = {
+    'ERROR': 69,
+    'WARN': 42
+}
 
 CONFIG_FILE = '/etc/smokercli.yaml'
 
@@ -244,6 +248,9 @@ def main():
     group_output.add_argument(
         '-d', '--debug', dest='debug', action='store_true',
         help="Debug output")
+    group_output.add_argument(
+        '-e', '--exitcode', dest='exitcode', action='store_true',
+        help="Nonzero exit code if any of plugins failed")
     group_output.add_argument(
         '--junit-config-file', dest='junit_config_file',
         help="Name of configuration file for junit xml formatter")
@@ -637,6 +644,12 @@ def main():
     for line in output:
         if line:
             print line
+
+    if args.exitcode:
+        statuses = [host['status'] for host, _ in plugins.get_host_plugins()]
+        for status in ('ERROR', 'WARN'):
+            if status in statuses:
+                sys.exit(EXIT_CODES[status])
 
 def dump_tap(plugins):
     """
