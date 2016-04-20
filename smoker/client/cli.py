@@ -41,7 +41,7 @@ COLORS = {
 
 EXIT_CODES = {
     'ERROR': 69,
-    'WARN': 42
+    'WARN': 0
 }
 
 CONFIG_FILE = '/etc/smokercli.yaml'
