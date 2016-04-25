@@ -376,7 +376,10 @@ class Plugin(object):
         Check if plugin should be run and execute it
         """
         if self.current_run:  # already running
-            return
+            if self.current_run.is_alive():
+                return
+            self.current_run.join()
+
         # Plugin run when forced
         if self.forced:
             self.current_run = PluginWorker(self.name, self.queue, self.params,
