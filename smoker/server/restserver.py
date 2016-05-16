@@ -30,6 +30,8 @@ def next_run_iso_format(next_run):
     else:
         next_run = next_run.isoformat()
 
+    return next_run
+
 
 def standardized_api_list(component):
     """
@@ -37,9 +39,9 @@ def standardized_api_list(component):
     """
     keyword = 'componentResults'
 
-    if not component:
-        return component
-    if not component[keyword]:
+    if (not isinstance(component, dict) or
+            keyword not in component or
+            not component[keyword]):
         return component
 
     # Remove reference, because we don't want to modify
