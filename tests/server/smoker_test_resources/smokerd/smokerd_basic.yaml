@@ -1,0 +1,14 @@
+bind_host: 0.0.0.0
+bind_port: 8086
+
+pidfile: /var/run/smokerd.pid
+
+stdin:  /dev/null
+stdout: /dev/null
+stderr: /dev/null
+
+templates:
+    BasePlugin:
+        Timeout: 5
+        History: 10
+

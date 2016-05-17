@@ -1,0 +1,27 @@
+bind_host: 0.0.0.0
+bind_port: 8086
+
+pidfile: /var/run/smokerd.pid
+
+stdin:  /dev/null
+stdout: /dev/null
+stderr: /dev/null
+
+templates:
+    BasePlugin:
+        Timeout: 5
+        History: 10
+
+plugins:
+    hostname:
+        Category: system
+        Command: hostname
+        Interval: 1
+    uptime:
+        Category: monitoring
+        Command: uptime
+        Interval: 1
+    uname:
+        Category: system
+        Module: smoker.server.plugins.uname
+        Interval: 1
