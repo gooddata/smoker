@@ -58,7 +58,6 @@ class TestDaemon(object):
 
         expected_plugins = copy.deepcopy(self.expected_plugins)
         expected = dict(expected_plugins, **copy.deepcopy(self.expected_basic))
-        # I'm not sure if we still keep 'config' key/value
         expected['config'] = yaml_file
         smokerd = Smokerd(config=yaml_file)
         assert smokerd.conf == expected
@@ -89,7 +88,6 @@ class TestDaemon(object):
     def test_load_config_with_include_dir(self):
         yaml_file = '%s/%s.yaml' % (self.conf_dir, generate_unique_file())
         expected = copy.deepcopy(self.expected_plugins)
-        # I'm not sure if we still keep 'config' key/value
         expected['config'] = yaml_file
         expected['bind_host'] = '0.0.0.0'
         expected['bind_port'] = 8086
@@ -125,7 +123,6 @@ class TestDaemon(object):
     def test_load_config_with_include_dir_only(self):
         yaml_file = '%s/%s.yaml' % (self.conf_dir, generate_unique_file())
         expected = copy.deepcopy(self.expected_plugins)
-        # I'm not sure if we still keep 'config' key/value
         expected['config'] = yaml_file
 
         with open(yaml_file, 'wb') as fp:
