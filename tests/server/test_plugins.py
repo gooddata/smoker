@@ -386,7 +386,8 @@ class TestPlugin(object):
     def test_schedule_run_now(self):
         self.plugin.schedule_run(now=True)
         delta = (datetime.datetime.now() - self.plugin.next_run)
-        assert round(delta.total_seconds(), 0) == 0
+        total_seconds = delta.seconds + float(delta.microseconds)/1000000
+        assert round(total_seconds, 0) == 0
 
     def test_schedule_run_with_interval(self):
         params = dict(self.test_params_default, **{'Interval': 15})
@@ -394,7 +395,8 @@ class TestPlugin(object):
                                        params=params)
 
         delta = (plugin.next_run - datetime.datetime.now())
-        assert round(delta.total_seconds(), 0) == plugin.params['Interval']
+        total_seconds = delta.seconds + float(delta.microseconds)/1000000
+        assert round(total_seconds, 0) == plugin.params['Interval']
 
     def test_force_to_run_plugin_without_interval_parameter(self):
         plugin = server_plugins.Plugin(name=self.test_plugin_name,
@@ -440,7 +442,8 @@ class TestPlugin(object):
         time.sleep(2.5)
         plugin.run()
         delta = (plugin.next_run - datetime.datetime.now())
-        assert round(delta.total_seconds(), 0) == plugin.params['Interval']
+        total_seconds = delta.seconds + float(delta.microseconds)/1000000
+        assert round(total_seconds, 0) == plugin.params['Interval']
 
     def test_plugin_should_not_be_run_without_interval_parameter(self):
         plugin = server_plugins.Plugin(name=self.test_plugin_name,
@@ -555,7 +558,6 @@ class TestPluginWorker(object):
                                              queue=self.queue, params=params)
         with pytest.raises(TypeError) as exc_info:
             worker.run()
-        assert 'an integer is required' in exc_info.value
 
     def test_run_worker_with_maintenance_lock(self):
         expected_message = ['Skipped because of maintenance in progress']
@@ -695,7 +697,7 @@ class TestPluginWorker(object):
         expected_list = [1, '\\[Good\\]Data', '\\/\\\\G']
         assert worker.escape(tbe=tbe_list) == expected_list
 
-        tbe_tuple = {1, '[Good]Data', '/\G'}
+        tbe_tuple = (1, '[Good]Data', '/\G')
         with pytest.raises(Exception) as exc_info:
             worker.escape(tbe=tbe_tuple)
         assert 'Unknown data type' in exc_info.value
