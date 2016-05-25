@@ -274,7 +274,7 @@ Unit tests on smoker require py.test
 
 With PIP:
 
-	pip install pytest lockfile
+	pip install pytest lockfile mock
 
 ### Usage
 Run unit test file with command:
