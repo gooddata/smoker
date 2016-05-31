@@ -556,7 +556,7 @@ class TestPluginWorker(object):
         params = dict(self.params_default, **test_params)
         worker = server_plugins.PluginWorker(name='Hostname',
                                              queue=self.queue, params=params)
-        with pytest.raises(TypeError) as exc_info:
+        with pytest.raises(TypeError):
             worker.run()
 
     def test_run_worker_with_maintenance_lock(self):
