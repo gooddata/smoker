@@ -208,6 +208,9 @@ def main():
     group_filters.add_argument(
         '--smoke', action='store_true',
         help="Filter plugins by Type smokeTest")
+    group_filters.add_argument(
+        '--locked', action='store_true',
+        help="Platorm is locked, don't run plugins requiring live platform")
 
     # Plugin state filters
     group_filters.add_argument(
@@ -508,6 +511,9 @@ def main():
         states = ['OK', 'ERROR', 'WARN', 'UNKNOWN']
     # Add status filter
     filters.append(('status', states))
+
+    # Add locked filter
+    filters.append({'key': 'RunOnLocked', 'value': True})
 
     hosts = ['localhost']
     discovered_hosts = _host_discovery(args)
