@@ -169,8 +169,6 @@ plugins:
 		Parser: smoker.server.plugins.varnishparser
 		# Don't run automatically
 		Interval: 0
-		# Report as warn when a file present
-		MaintenanceLock = /var/lock/maintenance.lock
 		# Just for categorization and filtering
 		Category: infrastructure
 		Component: varnish

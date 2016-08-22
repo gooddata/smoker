@@ -4,7 +4,6 @@
 
 import copy
 import datetime
-import lockfile
 import multiprocessing
 import os
 import psutil
@@ -13,7 +12,6 @@ import re
 from smoker.server import exceptions as smoker_exceptions
 import smoker.server.plugins as server_plugins
 import time
-
 
 class TestPluginManager(object):
     """Unit tests for the PluginManager class"""
@@ -331,7 +329,6 @@ class TestPlugin(object):
             'gid': 'default',
             'Template': None,
             'Action': None,
-            'MaintenanceLock': None
         }
         assert self.plugin.params == expected_params
 
@@ -509,7 +506,6 @@ class TestPluginWorker(object):
         'Parser': None,
         'uid': 'default',
         'gid': 'default',
-        'MaintenanceLock': None,
         'Timeout': 30,
         'Action': None
     }
@@ -558,23 +554,6 @@ class TestPluginWorker(object):
                                              queue=self.queue, params=params)
         with pytest.raises(TypeError):
             worker.run()
-
-    def test_run_worker_with_maintenance_lock(self):
-        expected_message = ['Skipped because of maintenance in progress']
-
-        maintenance_lock = os.getcwd() + random_string()
-        test_params = {'MaintenanceLock': maintenance_lock + '.lock'}
-        params = dict(self.params_default, **test_params)
-        lock = lockfile.FileLock(maintenance_lock)
-        with lock:
-            worker = server_plugins.PluginWorker(name='Hostname',
-                                                 queue=self.queue,
-                                                 params=params)
-            worker.run()
-            assert 'status' in worker.result
-            assert worker.result['status'] == 'WARN'
-            assert 'warn' in worker.result['messages']
-            assert worker.result['messages']['warn'] == expected_message
 
     def test_run_invalid_command(self):
         expected = 'InvalidCommand|command not found'
@@ -706,7 +685,6 @@ class TestPluginWorker(object):
         worker = server_plugins.PluginWorker(**self.conf_worker)
         assert worker.get_param('Command') == 'hostname'
         assert worker.get_param('Timeout') == 30
-        assert not worker.get_param('MaintenanceLock')
         assert not worker.get_param('InvalidParamater')
 
 
