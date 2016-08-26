@@ -302,6 +302,7 @@ class Plugin(object):
         'gid': 'default',
         'Template': None,
         'Action': None,
+        'MaintenanceLock': None
     }
 
     def __init__(self, name, params):
@@ -455,7 +456,15 @@ class PluginWorker(multiprocessing.Process):
         self.drop_privileged()
 
         with semaphore:
-            self.run_plugin(self.forced)
+            if (self.params['MaintenanceLock'] and
+                    os.path.exists(self.params['MaintenanceLock'])):
+                result = Result()
+                result.set_forced(self.forced)
+                result.set_status('WARN')
+                result.add_warn('Skipped because of maintenance in progress')
+                self.result = result.get_result()
+            else:
+                self.run_plugin(self.forced)
         self.queue.put(self.result)
 
     def run_command(self, command, timeout=0):
