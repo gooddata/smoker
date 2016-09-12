@@ -1,5 +1,6 @@
 [Unit]
 Description=GoodData Smoke testing daemon
+After=syslog.target network.target
 
 [Service]
 Type=simple
@@ -12,3 +13,6 @@ KillMode=mixed
 TimeoutStopSec=120s
 ExecStart=/usr/bin/smokerd.py -c ${CONFIG} $OPTIONS
 Restart=always
+
+[Install]
+WantedBy=multi-user.target
