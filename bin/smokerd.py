@@ -30,6 +30,8 @@ def main():
     parser.add_argument('--no-syslog', dest='no_syslog', action='store_true',
                         help=("Don't use syslog handler. Not effective when "
                               "logging config file is used."))
+    parser.add_argument('--no-console', dest='no_console', action='store_true',
+                        help="Don't use console handler.")
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
                         help="Be verbose")
     parser.add_argument('-d', '--debug', dest='debug', action='store_true',
@@ -38,7 +40,7 @@ def main():
 
     logging_args = {'config_file': args.logging_conf}
     # Don't log into console if we are going to background
-    if not args.foreground:
+    if not args.foreground or args.no_console:
         logging_args['console'] = False
     if args.no_syslog:
         logging_args['syslog'] = False

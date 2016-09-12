@@ -1,0 +1,14 @@
+[Unit]
+Description=GoodData Smoke testing daemon
+
+[Service]
+Type=simple
+
+Environment=CONFIG=/etc/smokerd/smokerd.yaml
+Environment='OPTIONS=-v --foreground --no-console'
+EnvironmentFile=-/etc/default/smokerd
+
+KillMode=mixed
+TimeoutStopSec=120s
+ExecStart=/usr/bin/smokerd.py -c ${CONFIG} $OPTIONS
+Restart=always
