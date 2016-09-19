@@ -513,7 +513,8 @@ def main():
     filters.append(('status', states))
 
     # Add locked filter
-    filters.append({'key': 'RunOnLocked', 'value': True})
+    if args.locked:
+        filters.append({'key': 'RunOnLocked', 'value': True})
 
     hosts = ['localhost']
     discovered_hosts = _host_discovery(args)
