@@ -1,8 +1,8 @@
 %global with_check 0
 
 Name:		smoker
-Version:	2.1.6
-Release:	2%{?dist}
+Version:	2.1.7
+Release:	1%{?dist}
 Epoch:		1
 Summary:	Smoke Testing Framework
 
@@ -37,7 +37,7 @@ plugins on request or periodically, unifies output and provide it via REST API
 for it's command-line or other client.
 
 %prep
-%setup -q -n smoker
+%setup -q -c
 
 %build
 %{__python} setup.py build
