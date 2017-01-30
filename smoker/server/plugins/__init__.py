@@ -411,11 +411,19 @@ class Plugin(object):
                 datetime.timedelta(seconds=self.params['Interval']))
 
     def collect_new_result(self):
-        if self.queue.empty():  # no new results
+        # there shouldn't be new results
+        if not self.current_run or self.current_run.is_alive():
             return
+
+        if self.queue.empty():  # results should be available, but are not
+            self.result.append(self.current_run.error_result(
+                "No run of plugin %s is found alive" % self.name))
+            self.forced_result = self.get_last_result()
+            self.forced = False
 
         while not self.queue.empty():
             result = self.queue.get()
+            lg.debug("Plugin %s: got result from queue", self.name)
             self.result.append(result)
 
             if 'forced' in result.keys() and result['forced']:
@@ -457,6 +465,7 @@ class PluginWorker(multiprocessing.Process):
         with semaphore:
             self.run_plugin(self.forced)
         self.queue.put(self.result)
+        lg.debug("Plugin %s: result put to queue", self.name)
 
     def run_command(self, command, timeout=0):
         """
@@ -561,13 +570,15 @@ class PluginWorker(multiprocessing.Process):
         try:
             plugin = __import__(module, globals(), locals(), ['Plugin'], -1)
         except ImportError as e:
-            lg.error("Plugin %s: can't load module %s: %s" % (self.name, module, e))
+            lg.error("Plugin %s: can't load module %s: %s" %
+                     (self.name, module, e))
             raise
 
         try:
             plugin = plugin.Plugin(self, **kwargs)
         except Exception as e:
-            lg.error("Plugin %s: can't initialize plugin module: %s" % (self.name, e))
+            lg.error("Plugin %s: can't initialize plugin module: %s" %
+                     (self.name, e))
             lg.exception(e)
             raise
 
@@ -579,10 +590,9 @@ class PluginWorker(multiprocessing.Process):
             signal.alarm(kwargs['timeout'])
             result = plugin.run()
         except PluginExecutionTimeout:
-            result = Result()
-            result.set_status('ERROR')
-            result.add_error('Plugin execution exceeded timeout %d seconds' %
-                             kwargs['timeout'])
+            result = self.error_result(
+                'Plugin execution exceeded timeout %d seconds' %
+                kwargs['timeout'])
         except Exception as e:
             lg.error("Plugin %s: module execution failed: %s" % (self.name, e))
             lg.exception(e)
@@ -607,24 +617,19 @@ class PluginWorker(multiprocessing.Process):
                 result = self.run_command(command, self.params['Timeout'])
             except Exception as e:
                 lg.error("Plugin %s: %s" % (self.name, e))
-                result = Result()
-                result.set_status('ERROR')
-                result.add_error(e)
+                result = self.error_result(e)
         # Python module will be executed
         elif self.params['Module']:
             try:
                 result = self.run_module(self.params['Module'])
             except Exception as e:
                 lg.error("Plugin %s: %s" % (self.name, e))
-                result = Result()
-                result.set_status('ERROR')
-                result.add_error(re.sub('^\n', '', ('%s' % e).strip()))
+                result = self.error_result(
+                    re.sub('^\n', '', ('%s' % e).strip()))
         # No module or command to run
         else:
             lg.error("Plugin %s: no Command or Module to execute!" % self.name)
-            result = Result()
-            result.set_status('ERROR')
-            result.add_error('No Command or Module to execute!')
+            result = self.error_result('No Command or Module to execute!')
 
         # Run action on result
         if self.params['Action']:
@@ -636,27 +641,25 @@ class PluginWorker(multiprocessing.Process):
                 params = self.escape(params)
 
                 try:
-                    action = self.run_command(self.params['Action']['Command'] % params, timeout=self.params['Action']['Timeout'])
+                    action = self.run_command(
+                        self.params['Action']['Command'] %
+                        params, timeout=self.params['Action']['Timeout'])
                 except Exception as e:
                     lg.error("Plugin %s: %s" % (self.name, e))
-                    action = Result()
-                    action.set_status('ERROR')
-                    action.add_error(e)
+                    action = self.error_result(e)
             # Execute Python module
             elif self.params['Action']['Module']:
                 try:
-                    action = self.run_module(self.params['Action']['Module'], result=result)
+                    action = self.run_module(
+                        self.params['Action']['Module'], result=result)
                 except Exception as e:
                     lg.error("Plugin %s: %s" % (self.name, e))
-                    action = Result()
-                    action.set_status('ERROR')
-                    action.add_error(e)
+                    action = self.error_result(e)
             # No command or module to execute
             else:
-                lg.error("Plugin %s: no Action Command or Module to execute!" % self.name)
-                action = Result()
-                action.set_status('ERROR')
-                action.add_error('No Command or Module to execute!')
+                lg.error("Plugin %s: no Action Command or Module to execute!" %
+                         self.name)
+                action = self.error_result('No Command or Module to execute!')
             # Add action result to plugin result
             result.set_action(action)
 
@@ -666,14 +669,18 @@ class PluginWorker(multiprocessing.Process):
             self.result = result.get_result()
         except ValidationError as e:
             lg.error("Plugin %s: ValidationError: %s" % (self.name, e))
-            result = Result()
-            result.set_status('ERROR')
-            result.add_error('ValidationError: %s' % e)
+            result = self.error_result('ValidationError: %s' % e)
             result.set_forced(force)
             self.result = result.get_result()
 
         # Log result
         lg.info("Plugin %s result: %s" % (self.name, result.get_result()))
+
+    def error_result(self, message):
+        result = Result()
+        result.set_status('ERROR')
+        result.add_error(message)
+        return result.get_result()
 
     def escape(self, tbe):
         """
