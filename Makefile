@@ -3,11 +3,9 @@ VERSION := $(shell python setup.py --version)
 all: build
 
 sources: clean
-	$(eval TMPDIR := $(shell mktemp -d))
-	# Populate the spec file with correct version from setup.py
-	tar czf "$(TMPDIR)/smoker.tar.gz" ../smoker
-	mv "$(TMPDIR)/smoker.tar.gz" smoker.tar.gz
-	rmdir "$(TMPDIR)"
+	tar czvf smoker.tar.gz $(shell git ls-tree  --name-only HEAD)
+
+tarball: sources
 
 build install test:
 	python setup.py $@

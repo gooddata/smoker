@@ -556,6 +556,9 @@ def main():
     if args.force:
         plugins = client.force_run(
             plugins, progress=not args.no_progress)
+        if not plugins:
+            lg.error("Failed to execute selected plugins")
+            sys.exit(1)
 
     # Print raw output
     if args.pretty == 'raw':

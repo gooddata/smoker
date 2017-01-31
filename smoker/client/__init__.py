@@ -97,7 +97,7 @@ class Client(object):
             self.wait(pool)
 
         result = {}
-        for hostname, host in plugins.iteritems():
+        for hostname in plugins.iterkeys():
             result[hostname] = host_map[hostname].get_result()
 
         result = self._format_plugins(result)

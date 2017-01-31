@@ -67,10 +67,11 @@ def print_plugin(name, forced=False):
 
     plugin = smokerd.pluginmgr.get_plugin(name)
     plugin.collect_new_result()
+    result = plugin.get_last_result()
 
     # Format plugin result
     plugin_result = {
-        'lastResult': standardized_api_list(plugin.get_last_result()),
+        'lastResult': standardized_api_list(result),
         'links': {
             'self': '/plugins/%s' % name,
         },
@@ -285,10 +286,7 @@ class Process(Resource):
         except IndexError:
             abort(404, message='Process id %s not found' % id)
 
-        plugins = []
-        for plugin in process['plugins']:
-            plugins.append(plugin.name)
-            smokerd.pluginmgr.get_plugin(plugin.name).collect_new_result()
+        plugins = [plugin.name for plugin in process['plugins']]
 
         try:
             return print_plugins(plugins, forced=True)
