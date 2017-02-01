@@ -411,11 +411,12 @@ class Plugin(object):
                 datetime.timedelta(seconds=self.params['Interval']))
 
     def collect_new_result(self):
-        # there shouldn't be new results
-        if not self.current_run or self.current_run.is_alive():
-            return
+        if self.queue.empty():  # nothing to collect
+            # there shouldn't be new results
+            if not self.current_run or self.current_run.is_alive():
+                return
 
-        if self.queue.empty():  # results should be available, but are not
+            # results should be available, but are not
             self.result.append(self.current_run.error_result(
                 "No run of plugin %s is found alive" % self.name))
             self.forced_result = self.get_last_result()
@@ -589,6 +590,8 @@ class PluginWorker(multiprocessing.Process):
         try:
             signal.alarm(kwargs['timeout'])
             result = plugin.run()
+            if not result:
+                result = plugin.result
         except PluginExecutionTimeout:
             result = self.error_result(
                 'Plugin execution exceeded timeout %d seconds' %
