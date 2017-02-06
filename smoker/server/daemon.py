@@ -5,6 +5,7 @@
 import glob
 import logging
 import os
+import psutil
 import signal
 import sys
 import time
@@ -213,6 +214,14 @@ class Smokerd(object):
     def _restart_api_server(self):
         self.server.terminate()
         self.server.join()
+
+        # kill all the running plugins - forked from restapi server holds
+        # the smokerd port - new server cannot bind
+        for proc in psutil.process_iter():
+            if proc.name.startswith('smokerd plugin'):
+                lg.info("Killing running plugin %s", proc.name)
+                proc.kill()
+
         self.server = RestServer(
             self.conf['bind_host'], self.conf['bind_port'], self)
         self.server.start()
