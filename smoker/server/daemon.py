@@ -176,8 +176,7 @@ class Smokerd(object):
         lg.info("Starting webserver on %(bind_host)s:%(bind_port)s"
                 % self.conf)
         try:
-            self.server = RestServer(self.conf['bind_host'],
-                                     self.conf['bind_port'], self)
+            self.server = RestServer(self)
             self.server.start()
         except Exception as e:
             lg.error("Can't start HTTP server: %s" % e)
@@ -222,8 +221,7 @@ class Smokerd(object):
                 lg.info("Killing running plugin %s", proc.name)
                 proc.kill()
 
-        self.server = RestServer(
-            self.conf['bind_host'], self.conf['bind_port'], self)
+        self.server = RestServer(self)
         self.server.start()
 
     def _redirect_standard_io(self):

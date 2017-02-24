@@ -295,17 +295,16 @@ class Process(Resource):
 
 
 class RestServer(multiprocessing.Process):
-    def __init__(self, host, port, smoker_daemon):
+    def __init__(self, smoker_daemon):
         """
-        :param host: host to bind the server to"
-        :type host: string
-        :param port: port to bind the server to"
-        :type port: int
         :param smoker_daemon: instance of the smoker daemon
         :type smoker_daemon: smokerd.Smokerd
         """
-        self.host = host
-        self.port = port
+        global smokerd
+        smokerd = smoker_daemon
+
+        self.host = smokerd.conf['bind_host']
+        self.port = smokerd.conf['bind_port']
         self.app = Flask(__name__)
 
         self.api = Api(self.app)
@@ -316,9 +315,6 @@ class RestServer(multiprocessing.Process):
         self.api.add_resource(Processes, '/processes', '/processes/')
         self.api.add_resource(Process, '/processes/<int:id>',
                               '/processes/<int:id>/')
-
-        global smokerd
-        smokerd = smoker_daemon
 
         super(RestServer, self).__init__()
 
