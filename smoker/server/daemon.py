@@ -226,9 +226,10 @@ class Smokerd(object):
         self.server.start()
 
     def _reopen_logfiles(self, signum=None, frame=None):
+        lg.info("smokerd received SIGHUP, reopening log files")
         redirect_standard_io(self.conf)
-        lg.info("received SIGHUP, restarting the REST API server")
-        self._restart_api_server()
+        lg.debug("sending SIGHUP to the REST API server")
+        os.kill(self.server.pid, signal.SIGHUP)
 
     def stop(self):
         """

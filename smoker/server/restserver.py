@@ -10,9 +10,11 @@ import json
 import logging
 import multiprocessing
 import setproctitle
+import signal
 import socket
 
 from smoker.server import exceptions
+from smoker.server import redirect_standard_io
 
 lg = logging.getLogger('smokerd.apiserver')
 
@@ -318,8 +320,16 @@ class RestServer(multiprocessing.Process):
 
         super(RestServer, self).__init__()
 
+    def _reopen_logfiles(self, signum=None, frame=None):
+        lg.info("REST API server received SIGHUP, reopening log files")
+        redirect_standard_io(smokerd.conf)
+
     def run(self):
         setproctitle.setproctitle('smokerd rest api server')
+
+        if hasattr(signal, 'SIGHUP'):
+            signal.signal(signal.SIGHUP, self._reopen_logfiles)
+
         try:
             self.app.run(self.host, self.port)
         except Exception:
