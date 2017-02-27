@@ -10,9 +10,11 @@ import json
 import logging
 import multiprocessing
 import setproctitle
+import signal
 import socket
 
 from smoker.server import exceptions
+from smoker.server import redirect_standard_io
 
 lg = logging.getLogger('smokerd.apiserver')
 
@@ -295,17 +297,16 @@ class Process(Resource):
 
 
 class RestServer(multiprocessing.Process):
-    def __init__(self, host, port, smoker_daemon):
+    def __init__(self, smoker_daemon):
         """
-        :param host: host to bind the server to"
-        :type host: string
-        :param port: port to bind the server to"
-        :type port: int
         :param smoker_daemon: instance of the smoker daemon
         :type smoker_daemon: smokerd.Smokerd
         """
-        self.host = host
-        self.port = port
+        global smokerd
+        smokerd = smoker_daemon
+
+        self.host = smokerd.conf['bind_host']
+        self.port = smokerd.conf['bind_port']
         self.app = Flask(__name__)
 
         self.api = Api(self.app)
@@ -317,13 +318,18 @@ class RestServer(multiprocessing.Process):
         self.api.add_resource(Process, '/processes/<int:id>',
                               '/processes/<int:id>/')
 
-        global smokerd
-        smokerd = smoker_daemon
-
         super(RestServer, self).__init__()
+
+    def _reopen_logfiles(self, signum=None, frame=None):
+        lg.info("REST API server received SIGHUP, reopening log files")
+        redirect_standard_io(smokerd.conf)
 
     def run(self):
         setproctitle.setproctitle('smokerd rest api server')
+
+        if hasattr(signal, 'SIGHUP'):
+            signal.signal(signal.SIGHUP, self._reopen_logfiles)
+
         try:
             self.app.run(self.host, self.port)
         except Exception:

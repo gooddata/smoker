@@ -11,6 +11,7 @@ import sys
 import time
 import yaml
 
+from smoker.server import redirect_standard_io
 from smoker.server.plugins import PluginManager
 from smoker.server.restserver import RestServer
 
@@ -176,8 +177,7 @@ class Smokerd(object):
         lg.info("Starting webserver on %(bind_host)s:%(bind_port)s"
                 % self.conf)
         try:
-            self.server = RestServer(self.conf['bind_host'],
-                                     self.conf['bind_port'], self)
+            self.server = RestServer(self)
             self.server.start()
         except Exception as e:
             lg.error("Can't start HTTP server: %s" % e)
@@ -222,29 +222,14 @@ class Smokerd(object):
                 lg.info("Killing running plugin %s", proc.name)
                 proc.kill()
 
-        self.server = RestServer(
-            self.conf['bind_host'], self.conf['bind_port'], self)
+        self.server = RestServer(self)
         self.server.start()
 
-    def _redirect_standard_io(self):
-        sys.stdout.flush()
-        sys.stderr.flush()
-        try:
-            si = file(self.conf['stdin'], 'r')
-            so = file(self.conf['stdout'], 'a+')
-            se = file(self.conf['stderr'], 'a+', 0)
-        except Exception as e:
-            lg.error("Can't open configured output: %s" % e)
-            lg.exception(e)
-            sys.exit(1)
-        os.dup2(si.fileno(), sys.stdin.fileno())
-        os.dup2(so.fileno(), sys.stdout.fileno())
-        os.dup2(se.fileno(), sys.stderr.fileno())
-
     def _reopen_logfiles(self, signum=None, frame=None):
-        self._redirect_standard_io()
-        lg.info("received SIGHUP, restarting the REST API server")
-        self._restart_api_server()
+        lg.info("smokerd received SIGHUP, reopening log files")
+        redirect_standard_io(self.conf)
+        lg.debug("sending SIGHUP to the REST API server")
+        os.kill(self.server.pid, signal.SIGHUP)
 
     def stop(self):
         """
@@ -295,7 +280,7 @@ class Smokerd(object):
             if not os.path.exists(path):
                 os.mkdir(path)
 
-        self._redirect_standard_io()
+        redirect_standard_io(self.conf)
 
         # Save PID into pidfile
         try:
