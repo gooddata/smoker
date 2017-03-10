@@ -20,6 +20,7 @@ lg = logging.getLogger('smokerd.pluginmanager')
 
 
 def alarm_handler(signum, frame):
+    lg.info('Plugin timeout exceeded')
     raise PluginExecutionTimeout
 
 
@@ -683,7 +684,7 @@ class PluginWorker(multiprocessing.Process):
         result = Result()
         result.set_status('ERROR')
         result.add_error(message)
-        return result.get_result()
+        return result
 
     def escape(self, tbe):
         """
