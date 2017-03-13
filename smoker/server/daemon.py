@@ -314,8 +314,11 @@ class Smokerd(object):
         try:
             # Shutdown webserver
             if self.server:
-                self.server.terminate()
-                self.server.join()
+                try:
+                    self.server.terminate()
+                    self.server.join()
+                except AttributeError:
+                    pass
 
             # Shutdown pluginmanager and all plugins
             if self.pluginmgr:

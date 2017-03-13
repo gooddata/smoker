@@ -20,6 +20,7 @@ lg = logging.getLogger('smokerd.pluginmanager')
 
 
 def alarm_handler(signum, frame):
+    lg.info('Plugin timeout exceeded')
     raise PluginExecutionTimeout
 
 
@@ -36,8 +37,8 @@ class PluginManager(object):
          * load plugins/templates/actions configuration
          * create plugins objects
         """
-        self.conf_plugins   = plugins
-        self.conf_actions   = actions
+        self.conf_plugins = plugins
+        self.conf_actions = actions
         self.conf_templates = templates
 
         self.plugins = {}
@@ -49,14 +50,13 @@ class PluginManager(object):
 
         self.stopping = False
 
-        # Initialize multiprocessing semamphore, by default limit by
-        # number of online CPUs + 2
-        if not semaphore_count:
-            semaphore_count = int(os.sysconf('SC_NPROCESSORS_ONLN')) + 2
-        lg.info("Plugins will run approximately at %s parallel processes",
-                semaphore_count)
         global semaphore
-        semaphore = multiprocessing.Semaphore(semaphore_count)
+        semaphore = None
+        # Don't limit plugin concurency unless requested
+        if semaphore_count:
+            lg.info("Plugins will run approximately at %s parallel processes",
+                    semaphore_count)
+            semaphore = multiprocessing.Semaphore(semaphore_count)
 
         # Load Plugin objects
         self.load_plugins()
@@ -463,8 +463,12 @@ class PluginWorker(multiprocessing.Process):
         setproctitle.setproctitle('smokerd plugin %s' % self.plugin_name)
         self.drop_privileged()
 
-        with semaphore:
+        if semaphore:
+            with semaphore:
+                self.run_plugin(self.forced)
+        else:
             self.run_plugin(self.forced)
+
         self.queue.put(self.result)
         lg.debug("Plugin %s: result put to queue", self.name)
 
@@ -683,7 +687,7 @@ class PluginWorker(multiprocessing.Process):
         result = Result()
         result.set_status('ERROR')
         result.add_error(message)
-        return result.get_result()
+        return result
 
     def escape(self, tbe):
         """
