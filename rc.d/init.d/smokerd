@@ -40,20 +40,18 @@ start() {
 	echo -n $"Starting smokerd: "
 
 	[ -f "$PIDFILE" ] && exit_error "PID file $PIDFILE already exists!"
-	[ -f "$LOCKFILE" ] && exit_error "Subsys $LOCKFILE is locked!"
+	pgrep -f $BINARY &> /dev/null && exit_error "$BINARY already running!"
 
 	$BINARY $SMOKERD_OPTIONS
 	RETVAL=$?
 	if [ $RETVAL -eq 0 ]; then
-		touch $LOCKFILE
 		# Wait a second before it's loaded and check if it's still running
 		sleep 1
-		if [ "`pgrep -f $PROG`" ]; then
+		if pgrep -f $BINARY &> /dev/null; then
 			success
 			echo
 			return 0
 		else
-			rm -f $LOCKFILE
 			exit_error "Daemon initiation failed!"
 		fi
 	else
@@ -76,17 +74,17 @@ stop() {
 		# Wait 120 seconds for smokerd to shutdown, then throw failure
 		time=0
 		while [ $time -lt 120 ]; do
-			ps aux|grep `cat $PIDFILE 2>/dev/null || echo chuja12345`|grep -v grep 2>&1 >/dev/null || break
+			pgrep -f $BINARY &> /dev/null || break
 			sleep 1
 			time=$[ $time + 1 ]
 		done
 
 		# Check if smokerd is still running
-		ps aux|grep `cat $PIDFILE 2>/dev/null || echo chuja12345`|grep -v grep 2>&1 >/dev/null
-		RETVAL=$?
-		if [ $RETVAL -eq 0 ]; then
+		if pgrep -f $BINARY &> /dev/null; then
 			exit_error "Daemon still running after $time seconds, maybe deadlocked?"
 		else
+			# This is left intentionally for transition - we don't want to keep the
+			# old lockfile in place
 			rm -f $LOCKFILE
 			success
 			echo
