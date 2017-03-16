@@ -19,82 +19,21 @@ PIDFILE='/var/run/smokerd.pid'
 LOCKFILE='/var/lock/subsys/smokerd'
 CONFDIR='/etc/smokerd'
 CONFIG="${CONFDIR}/smokerd.yaml"
-GENCONFIG=0
 SMOKERD_OPTIONS="-p ${PIDFILE} -v -c ${CONFIG}"
 
 # Overwrite options
 [ -f /etc/default/smokerd ] && . /etc/default/smokerd
 
-exit_error() {
-	failure
-	echo
-	[ ! -z "$1" ] && echo "$1" 1>&2
-	exit 1
-}
-
 start() {
-	[ -x $BINARY ] || exit 5
-
-	umask 077
-
-	echo -n $"Starting smokerd: "
-
-	[ -f "$PIDFILE" ] && exit_error "PID file $PIDFILE already exists!"
-	pgrep -f $BINARY &> /dev/null && exit_error "$BINARY already running!"
-
-	$BINARY $SMOKERD_OPTIONS
-	RETVAL=$?
-	if [ $RETVAL -eq 0 ]; then
-		# Wait a second before it's loaded and check if it's still running
-		sleep 1
-		if pgrep -f $BINARY &> /dev/null; then
-			success
-			echo
-			return 0
-		else
-			exit_error "Daemon initiation failed!"
-		fi
-	else
-		exit_error
-	fi
+	start_daemon -p $PIDFILE $BINARY $SMOKERD_OPTIONS
 }
 
 stop() {
-	echo -n $"Shutting down smokerd: "
-	if [ ! -f "$PIDFILE" ]; then
-		failure
-		echo
-		echo "PID file $PIDFILE doesn't exist!" 1>&2
-		return 1
-	fi
+	# This is left intentionally for transition - we don't want to keep the
+	# old lockfile in place
+	rm -f $LOCKFILE
 
-	kill $(cat $PIDFILE)
-	RETVAL=$?
-	if [ $RETVAL -eq 0 ]; then
-		# Wait 120 seconds for smokerd to shutdown, then throw failure
-		time=0
-		while [ $time -lt 120 ]; do
-			pgrep -f $BINARY &> /dev/null || break
-			sleep 1
-			time=$[ $time + 1 ]
-		done
-
-		# Check if smokerd is still running
-		if pgrep -f $BINARY &> /dev/null; then
-			exit_error "Daemon still running after $time seconds, maybe deadlocked?"
-		else
-			# This is left intentionally for transition - we don't want to keep the
-			# old lockfile in place
-			rm -f $LOCKFILE
-			success
-			echo
-			return 0
-		fi
-	else
-		failure
-		echo
-		return $RETVAL
-	fi
+	killproc -p $PIDFILE -d 120 $BINARY
 }
 
 rhstatus() {
