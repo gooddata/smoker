@@ -19,7 +19,7 @@ class Client(object):
     """
     hosts = []
 
-    def __init__(self, hosts):
+    def __init__(self, hosts, port=8086):
         """
         Create Host objects
         """
@@ -28,7 +28,7 @@ class Client(object):
         pool = []
         lg.info("Loading info for %d hosts" % len(hosts))
         for host in hosts:
-            host = Host(host)
+            host = Host(host, port)
 
             t = threading.Thread(target=host.load_about)
             t.daemon = True
@@ -290,7 +290,7 @@ class Host(object):
 
     _result  = None
 
-    def __init__(self, address):
+    def __init__(self, address, default_port):
         """
         Initialize object
         """
@@ -298,7 +298,7 @@ class Host(object):
         try:
             port = host[1]
         except IndexError:
-            port = 8086
+            port = default_port
 
         self.name = address
         self.url = "http://%s:%s" % (host[0], port)

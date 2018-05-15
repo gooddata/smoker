@@ -47,22 +47,30 @@ EXIT_CODES = {
 CONFIG_FILE = '/etc/smokercli.yaml'
 
 
-def _get_plugins():
+def _load_config():
     """
-    Get list of available host discovery plugin module names
+    Get client configuration from smokercli.yaml
     """
-
-    plugins = []
     conf_file = os.path.expanduser('~/.smokercli.yaml')
 
     if not os.path.exists(conf_file):
         conf_file = CONFIG_FILE
 
     if not os.path.exists(conf_file):
-        return plugins
+        return None
 
     with open(conf_file) as f:
         config = yaml.safe_load(f)
+
+    return config
+
+
+def _get_plugins(config):
+    """
+    Get list of available host discovery plugin module names
+    """
+
+    plugins = []
 
     if config and 'plugin_paths' in config:
         paths = config['plugin_paths']
@@ -101,14 +109,14 @@ def _get_plugin_arguments(name):
     return plugin.HostDiscoveryPlugin.arguments
 
 
-def _add_plugin_arguments(parser):
+def _add_plugin_arguments(parser, config):
     """
     Add host discovery plugin specific options to the cmdline argument parser
 
     :param parser: argparse.ArgumentParser instance
     """
 
-    plugins = _get_plugins()
+    plugins = _get_plugins(config)
     if not plugins:
         return
     argument_group = parser.add_argument_group('Plugin arguments')
@@ -137,7 +145,7 @@ def _run_discovery_plugin(name, args):
     return plugin.get_hosts(args)
 
 
-def _host_discovery(args):
+def _host_discovery(args, config):
     """
     Run all the discovery plugins
 
@@ -146,7 +154,7 @@ def _host_discovery(args):
     """
     discovered = []
 
-    for plugin in _get_plugins():
+    for plugin in _get_plugins(config):
         hosts = _run_discovery_plugin(plugin, args)
         if hosts:
             discovered += hosts
@@ -158,6 +166,10 @@ def main():
     """
     Main entrance
     """
+
+    # load config
+    config = _load_config()
+
     parser = argparse.ArgumentParser(
         description='Smoker client tool', add_help=False)
 
@@ -258,7 +270,7 @@ def main():
         '--junit-config-file', dest='junit_config_file',
         help="Name of configuration file for junit xml formatter")
 
-    _add_plugin_arguments(parser)
+    _add_plugin_arguments(parser, config)
     args = parser.parse_args()
 
     # Set log level and set args.no_progress option
@@ -517,7 +529,7 @@ def main():
         filters.append({'key': 'RunOnLocked', 'value': True})
 
     hosts = ['localhost']
-    discovered_hosts = _host_discovery(args)
+    discovered_hosts = _host_discovery(args, config)
     if args.hosts:
         hosts = args.hosts
         if discovered_hosts:
@@ -526,7 +538,11 @@ def main():
         hosts = discovered_hosts
 
     # Initialize Client
-    client = Client(hosts)
+    if config and 'bind_port' in config:
+        client = Client(hosts, config['bind_port'])
+    else:
+        client = Client(hosts)
+
     plugins = client.get_plugins(filters, filters_negative=args.exclude,
                                  exclude_plugins=args.exclude_plugins)
 

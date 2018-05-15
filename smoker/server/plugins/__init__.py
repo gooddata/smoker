@@ -3,13 +3,15 @@
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
 import datetime
+import gc
 import logging
 import multiprocessing
 import os
 import re
+import setproctitle
 import signal
 import simplejson
-import setproctitle
+import socket
 import time
 import types
 
@@ -461,6 +463,8 @@ class PluginWorker(multiprocessing.Process):
 
     def run(self):
         setproctitle.setproctitle('smokerd plugin %s' % self.plugin_name)
+
+        self.close_unnecessary_sockets()
         self.drop_privileged()
 
         if semaphore:
@@ -737,6 +741,14 @@ class PluginWorker(multiprocessing.Process):
             return self.params[name]
         except KeyError:
             return default
+
+    def close_unnecessary_sockets(self):
+        """close unnecessary open sockets cloned on fork"""
+        open_sockets = filter(lambda x: type(x) == socket._socketobject, gc.get_objects())
+        for cur_socket in open_sockets:
+            # close all TCP (SOCK_STREAM) sockets
+            if cur_socket.type == socket.SOCK_STREAM:
+                cur_socket.close()
 
     def drop_privileged(self):
         if (self.params['uid'] == 'default' and
