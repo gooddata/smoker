@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright © 2007-2013, All rights reserved. GoodData® Corporation, http://gooddata.com
-
-__author__ = "miroslav.hedl@gooddata.com"
-__maintainer__ = __author__
+# Copyright © 2007-2018, All rights reserved. GoodData® Corporation, http://gooddata.com
 
 # xml schema for jenkins junit xml format is here:
 # https://svn.jenkins-ci.org/trunk/hudson/dtkit/dtkit-format/dtkit-junit-model/src/main/resources/com/thalesgroup/dtkit/junit/model/xsd/junit-4.xsd
@@ -13,9 +10,6 @@ import collections
 import string
 
 
-################################################################################
-##################################   xml  part   ###############################
-################################################################################
 class XmlBuilder(object):
     '''
     Template for building basic XML structure.
@@ -158,7 +152,7 @@ class XmlBuilder(object):
                       if val is not None)
             + '>', **kwargs)
 
-    def _close_tag(self, indent_lvl=0, **kwargs):
+    def _close_tag(self, indent_lvl=0):
         '''Will close matching tag. Will nest to the right (better readability)'''
         return "</{name}>".format(name=self._tag_name)
 

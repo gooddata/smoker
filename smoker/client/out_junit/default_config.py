@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright © 2007-2013, All rights reserved. GoodData® Corporation, http://gooddata.com
-
-__author__ = "miroslav.hedl@gooddata.com"
-__maintainer__ = __author__
-
+# Copyright © 2007-2018, All rights reserved. GoodData® Corporation, http://gooddata.com
 
 YAML_CONFIG = \
 '''

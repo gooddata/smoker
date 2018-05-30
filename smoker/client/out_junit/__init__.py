@@ -1,14 +1,7 @@
 # -*- coding: utf-8 -*-
-# Copyright © 2007-2013, All rights reserved. GoodData® Corporation
-
-__author__ = "miroslav.hedl@gooddata.com"
-__maintainer__ = __author__
-
+# Copyright © 2007-2018, All rights reserved. GoodData® Corporation
 
 '''
-Primary goal of this module is function `plugins_to_xml` that solves issue
-PCI-1385.
-
 This module converts plugins dictionary from `Smoker.py` and produces generic
 list of named tuple based on configuration template (described inside).
 
@@ -62,7 +55,7 @@ def plugins_to_xml(dict_data,
     :return: returns xml structure (testsuites corresponds to nodes, testcases
              to plugin)
     """
-    def apply(inst, custom_dict=None, **kwargs):
+    def _apply(inst, custom_dict=None, **kwargs):
         """
         Dynamically applies value of value as new value.
 
@@ -72,7 +65,7 @@ def plugins_to_xml(dict_data,
         'stg-c3.alog'
         >>> custom_dict
         { 'name': 'node', 'classname': 'ClassName'}
-        >>> apply(inst, custom_dict=custom_dict)
+        >>> _apply(inst, custom_dict=custom_dict)
         { 'name': 'sgt-c3', 'classname': 'stg-c3.alog'}
         """
         applied_args = {}
@@ -106,15 +99,15 @@ def plugins_to_xml(dict_data,
     for template_name, ts in sorted(ts_data.iteritems()):
         with junit_xml.testsuites as html_tss:
             html_tss(name=template_name)
-            for node, tcs in sorted(ts.iteritems()):
+            for _node, tcs in sorted(ts.iteritems()):
                 with html_tss.testsuite as html_ts:
                     first = tcs[0] if tcs else None
                     if first:
-                        html_ts(custom_dict=apply(first,
+                        html_ts(custom_dict=_apply(first,
                                                   custom_dict=C[ts_attr]))
                     for tc in sorted(tcs):
                         html_tc = html_ts.testcase(
-                            custom_dict=apply(tc, custom_dict=C[tc_attr]))
+                            custom_dict=_apply(tc, custom_dict=C[tc_attr]))
 
                         # handle plugins without components
                         if tc.CaseStatus:
@@ -146,12 +139,3 @@ def list_to_string(message):
         return '\n'.join(message)
     else:
         return message
-
-# def test_onepass():
-#     fixture_filename = 'tests/input_data_fixture'
-#
-#     with open('%s.yaml' % (fixture_filename,)) as f_in:
-#         xml_txt = plugins_to_xml(yaml.safe_load(f_in))
-#
-#     with open('%s.testresult' % (fixture_filename,), 'w') as f_out:
-#         f_out.write(xml_txt)
