@@ -1,4 +1,5 @@
 <img src="http://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Alice_05a-1116x1492.jpg/672px-Alice_05a-1116x1492.jpg" align=right width=340px />
+
 - [Smoker](#smoker)
 	- [Purpose and use](#purpose-and-use)
 	- [Installation](#installation)
