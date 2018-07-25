@@ -53,6 +53,10 @@ Installation
 Smoker is compatible and tested with Python 2.6.6 and newer.
 It doesn't have much dependencies, follow instructions bellow to install them:
 
+GCC is required for PIP:
+
+        yum install gcc
+
 With PIP:
 
 	pip install psutil PyAML argparse simplejson setproctitle Flask-RESTful
