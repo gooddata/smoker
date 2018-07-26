@@ -13,7 +13,7 @@ Source0:	smoker.tar.gz
 
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:	noarch
-BuildRequires:	python2-devel python-setuptools-devel python-flask-restful python-setproctitle python-psutil python-simplejson python-argparse PyYAML
+BuildRequires:	python2-devel python2-setuptools python-flask-restful python-setproctitle python-psutil python-simplejson python-argparse PyYAML
 Requires:	python-flask-restful >= 1:0.3.1-5
 Requires:	python-setproctitle
 Obsoletes:	gdc-smoker
