@@ -51,6 +51,11 @@ Installation
 ------------
 ### Dependencies
 Smoker is compatible and tested with Python 2.6.6 and newer.
+
+To build smoker with 'make rpm' folowing packages required to be installed on the CentOS, RHEL or Fedora:
+
+        yum install gcc rpm-build python-setproctitle python-flask-restful python2-setuptools
+
 It doesn't have much dependencies, follow instructions bellow to install them:
 
 With PIP:
