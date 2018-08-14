@@ -206,7 +206,7 @@ Good, now start smokerd with this configuration and let's see some usage example
 ### Usage
 If you want to see last results on current host, simply run smokercli.py without parameters. This won't execute any plugins, just print last results and errors - to have output as short and useful as possible.
 ```
-server1~# smokesmokercli.py
+server1~# smokercli.py
 server1                            [ERROR]
 - fsmount                          [ERROR] (2014-01-17 16:12:58)
  -- /vpsadmin_backuper             [ERROR]
@@ -217,7 +217,7 @@ server1                            [ERROR]
 
 Now you want to see more details, so use `-o long` option to make output a little bit longer.
 ```
-server1~# smokesmokercli.py -o long
+server1~# smokercli.py -o long
 server1                            [ERROR]
 - fsmount                          [ERROR] (2014-01-17 16:12:58)
  -- /vpsadmin_backuper             [ERROR]
@@ -232,7 +232,7 @@ You can also use more output types, check `smokercli.py --help` and don't fear t
 
 Let's execute varnish plugin and check if it's working fine. We will use `-p varnish` option to work with only one plugin (but we can use multiple space-separated plugins) and `-f` option to force execution.
 ```
-server1~# smokesmokercli.py -o long -p Varnish -f
+server1~# smokercli.py -o long -p Varnish -f
 server1                            [WARN]
 - varnish                          [WARN]
  -- www01                          [OK]
