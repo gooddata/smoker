@@ -290,7 +290,7 @@ class Host(object):
 
     _result  = None
 
-    def __init__(self, address, default_port):
+    def __init__(self, address, default_port=8086):
         """
         Initialize object
         """
