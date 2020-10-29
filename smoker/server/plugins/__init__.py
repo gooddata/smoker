@@ -109,7 +109,7 @@ class PluginManager(object):
             raise BasePluginTemplateNotFound
 
         for plugin, options in self.conf_plugins.iteritems():
-            if options.has_key('Enabled') and options['Enabled'] == False:
+            if 'Enabled' in options and options['Enabled'] == False:
                 lg.info("Plugin %s is disabled, skipping.." % plugin)
                 continue
 
@@ -145,11 +145,11 @@ class PluginManager(object):
             template = {}
 
         # Plugin has template, load it's parent params
-        if options.has_key('Template'):
+        if 'Template' in options:
             template_custom = self.get_template(options['Template'])
             template = dict(template, **template_custom)
 
-        if options.has_key('Action'):
+        if 'Action' in options:
             options['Action'] = self.get_action(options['Action'])
 
         params = dict(template, **options)
@@ -194,7 +194,7 @@ class PluginManager(object):
             value = filter[key]
 
             for plugin in self.plugins.itervalues():
-                if plugin.params.has_key(key):
+                if key in plugin.params:
                     if plugin.params[key] == value:
                         plugins.append(plugin)
             return plugins
@@ -518,7 +518,7 @@ class PluginWorker(multiprocessing.Process):
 
             if json:
                 # Output is JSON, check it has valid status or raise exception
-                if json.has_key('status') and json['status'] in [ 'OK', 'ERROR', 'WARN' ]:
+                if 'status' in json and json['status'] in [ 'OK', 'ERROR', 'WARN' ]:
                     try:
                         result.set_result(json, validate=True)
                     except ValidationError as e:
@@ -703,7 +703,7 @@ class PluginWorker(multiprocessing.Process):
         if isinstance(tbe, dict):
             escaped = {}
             for key, value in tbe.iteritems():
-                if type(value) in [int, types.NoneType, bool]:
+                if type(value) in [int, type(None), bool]:
                     escaped[key] = value
                 else:
                     try:
@@ -720,7 +720,7 @@ class PluginWorker(multiprocessing.Process):
         elif isinstance(tbe, list):
             escaped = []
             for value in tbe:
-                if type(value) in [int, types.NoneType, bool]:
+                if type(value) in [int, type(None), bool]:
                     escaped.append(value)
                 else:
                     try:
@@ -1057,7 +1057,7 @@ class BasePlugin(object):
         You shouldn't use anything else than this function from inside plugins!
         """
         # Set default timeout
-        if not kwargs.has_key('timeout'):
+        if 'timeout' not in kwargs:
             kwargs['timeout'] = self.plugin.get_param('Timeout', default=120)
 
         return smoker.util.command.execute(command, **kwargs)

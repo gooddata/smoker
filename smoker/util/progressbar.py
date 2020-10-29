@@ -32,6 +32,7 @@ except NonInteractiveError as e:
     print e
     # fallback to non-progress wait
 """
+from __future__ import print_function
 
 import sys
 import numbers
@@ -138,7 +139,7 @@ class ProgressBar(threading.Thread, object):
         """
         This function has to be called after progress bar stop to do the cleanup
         """
-        print
+        print()
 
     def __exit__(self, type, value, traceback):
         """

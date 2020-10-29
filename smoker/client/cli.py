@@ -7,6 +7,7 @@ Client tool for GDC Smoker daemon
 
 See pydoc for command line tool smoker.py
 """
+from __future__ import print_function
 
 import argparse
 import datetime
@@ -560,11 +561,11 @@ def main():
             # server1/httpd
             # server2/crond
             for host, plugin in plugins_tuple:
-                print "%s/%s" % (host['name'], plugin['name'])
+                print("%s/%s" % (host['name'], plugin['name']))
         else:
             # Print only plugin-by-line structure without hostname
             for host, plugin in plugins_tuple:
-                print "%s" % plugin['name']
+                print("%s" % plugin['name'])
         sys.exit(0)
 
     # Force plugins run
@@ -593,17 +594,17 @@ def main():
                     return obj.isoformat()
                 return simplejson.JSONEncoder.default(self, obj)
 
-        print simplejson.dumps(plugins, cls=JSONEncoder)
+        print(simplejson.dumps(plugins, cls=JSONEncoder))
         sys.exit(0)
     elif args.pretty == 'tap':
         dump = dump_tap(plugins)
         # Convert mixed string into ascii to workaround UnicodeEncodeError
         # shouldn't be needed in Python 3
-        print dump.encode('ascii', 'ignore')
+        print(dump.encode('ascii', 'ignore'))
         sys.exit(0)
     elif args.pretty == 'xml':
         dump = plugins_to_xml(plugins, args.junit_config_file)
-        print dump
+        print(dump)
         sys.exit(0)
 
     # Print result
@@ -669,7 +670,7 @@ def main():
 
     for line in output:
         if line:
-            print line
+            print(line)
 
     if args.exitcode:
         statuses = [host['status'] for host, _ in plugins.get_host_plugins()]

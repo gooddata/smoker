@@ -116,7 +116,7 @@ class Smokerd(object):
         # Store parameters but don't overwite
         # those submitted by command line
         for key, value in conf.iteritems():
-            if self.conf.has_key(key):
+            if key in self.conf:
                 # User has submitted own parameter,
                 # use that instead of config one
                 lg.debug("Using parameter %s from user, ignoring config file value" % key)
@@ -133,7 +133,7 @@ class Smokerd(object):
         lg.info("Starting daemon")
 
         # Change effective UID/GID
-        if self.conf.has_key('uid') and self.conf.has_key('gid'):
+        if 'uid' in self.conf and 'gid' in self.conf:
             if os.geteuid != self.conf['uid'] and os.getegid != self.conf['gid']:
                 try:
                     os.setegid(self.conf['gid'])

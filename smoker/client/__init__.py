@@ -398,7 +398,7 @@ class Host(object):
                     retries -= 1
                     continue
 
-            if res.has_key('asyncTask'):
+            if 'asyncTask' in res:
                 uri = res['asyncTask']['link']['poll']
                 time.sleep(1)
             else:

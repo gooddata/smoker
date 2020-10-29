@@ -15,14 +15,15 @@ So sorting or structuring testsuites/testcases is futile effort.
 Important is to properly set 'classname' and 'name' attributes for testcase
 elements.
 '''
+from __future__ import absolute_import
 
 from cgi import escape
 import collections
 import yaml
 
-import default_config
-import rows
-from xml_builder import XmlBuilder
+from . import default_config
+from . import rows
+from .xml_builder import XmlBuilder
 
 
 def plugins_to_xml(dict_data,

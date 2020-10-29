@@ -222,7 +222,7 @@ class Plugin(BasePlugin):
         }
 
         for member in status['members']:
-            if member.has_key('errmsg'):
+            if 'errmsg' in member:
                 msg = 'Member %s is %s: %s' % (member['name'], member['stateStr'], member['errmsg'])
             else:
                 msg = 'Member %s is %s' % (member['name'], member['stateStr'])
