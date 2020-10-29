@@ -5,7 +5,7 @@ Module providing base http server for smokerd REST API
 """
 
 from flask import Flask, request, make_response
-from flask.ext.restful import Api, Resource, abort
+from flask_restful import Api, Resource, abort
 import json
 import logging
 import multiprocessing
