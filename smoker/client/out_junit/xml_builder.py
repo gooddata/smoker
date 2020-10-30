@@ -5,6 +5,7 @@
 # https://svn.jenkins-ci.org/trunk/hudson/dtkit/dtkit-format/dtkit-junit-model/src/main/resources/com/thalesgroup/dtkit/junit/model/xsd/junit-4.xsd
 
 
+from builtins import object
 import itertools
 import collections
 import string
@@ -94,6 +95,8 @@ class XmlBuilder(object):
 
     ## special methods
     def __getattr__(self, tag_name):
+        if tag_name in {'__bool__', '__len__'}:
+            return getattr(self, tag_name)
 
         if tag_name.startswith('_'):
             return self.__dict__.get(tag_name)
@@ -124,9 +127,9 @@ class XmlBuilder(object):
         :param dict kwargs: kwargs will override values in custom dict
         '''
         if custom_dict:
-            for key, val in custom_dict.iteritems():
+            for key, val in custom_dict.items():
                 self._fields.append((key, val))
-        for key, val in kwargs.iteritems():
+        for key, val in kwargs.items():
             self._fields.append((key, val))
         return self
 
@@ -179,7 +182,7 @@ class XmlBuilder(object):
         :return: formatted string in xml format
         '''
         dumped_children = []
-        for child in itertools.ifilter(None, self._children):
+        for child in filter(None, self._children):
             if isinstance(child, XmlBuilder):
                 dumped_children.append(child.dump(indent_lvl=(indent_lvl + 1),
                                                   **kwargs))

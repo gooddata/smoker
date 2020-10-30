@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2015, GoodData(R) Corporation. All rights reserved
 
+from builtins import object
 import copy
 import datetime
 import os
@@ -166,14 +167,14 @@ class TestDaemon(object):
             fp.write('plugins InvalidFormat')
         with pytest.raises(AttributeError) as exc_info:
             Smokerd(config=yaml_file)
-        assert "'str' object has no attribute 'iteritems'" in exc_info.value
+        assert "'str' object has no attribute 'items'" in exc_info.value
         os.remove(yaml_file)
 
         with open(yaml_file, 'wb') as fp:
             fp.write('- plugins InvalidFormat')
         with pytest.raises(AttributeError) as exc_info:
             Smokerd(config=yaml_file)
-        assert "'list' object has no attribute 'iteritems'" in exc_info.value
+        assert "'list' object has no attribute 'items'" in exc_info.value
         os.remove(yaml_file)
 
     def test_load_config_from_default_path(self):

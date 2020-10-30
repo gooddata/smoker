@@ -43,6 +43,7 @@ print tap.dump()
 #       ok 1 - subtest1
 """
 
+from builtins import object
 import re
 
 class Tap(object):
@@ -153,7 +154,7 @@ class TapTest(object):
         dump.append('%s %s - %s' % (self.status, self.index, self.name))
         if self.messages:
             messages = []
-            for key, values in self.messages.iteritems():
+            for key, values in self.messages.items():
                 if values:
                     messages.append('\t- %s:' % key)
                     for msg in values:

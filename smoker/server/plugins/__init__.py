@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
+from builtins import str
+from past.builtins import basestring
+from builtins import object
 import datetime
 import gc
 import logging
@@ -71,18 +74,18 @@ class PluginManager(object):
         self.stopping = True
 
         # Trigger stop of all plugins
-        for plugin in self.plugins.values():
+        for plugin in list(self.plugins.values()):
             if plugin.current_run:
                 plugin.current_run.stop()
                 plugin.current_run.terminate()
 
         # Wait until all plugins are stopped
         if blocking:
-            plugins_left = self.plugins.keys()
+            plugins_left = list(self.plugins.keys())
             plugins_left_cnt = len(plugins_left)
             while plugins_left:
                 plugins_left = []
-                for name, plugin in self.plugins.iteritems():
+                for name, plugin in self.plugins.items():
                     if not plugin.current_run:
                         continue
                     if plugin.current_run.is_alive():
@@ -108,7 +111,7 @@ class PluginManager(object):
             lg.error("Required BasePlugin template is not configured!")
             raise BasePluginTemplateNotFound
 
-        for plugin, options in self.conf_plugins.iteritems():
+        for plugin, options in self.conf_plugins.items():
             if 'Enabled' in options and options['Enabled'] == False:
                 lg.info("Plugin %s is disabled, skipping.." % plugin)
                 continue
@@ -190,10 +193,10 @@ class PluginManager(object):
 
         if filter:
             plugins = []
-            key = filter.keys()[0]
+            key = list(filter.keys())[0]
             value = filter[key]
 
-            for plugin in self.plugins.itervalues():
+            for plugin in self.plugins.values():
                 if key in plugin.params:
                     if plugin.params[key] == value:
                         plugins.append(plugin)
@@ -267,7 +270,7 @@ class PluginManager(object):
         """
         Start run of plugins configured as such
         """
-        for plugin in self.plugins.values():
+        for plugin in list(self.plugins.values()):
             if not plugin.params['Interval']:
                 continue
             plugin.run()
@@ -277,7 +280,7 @@ class PluginManager(object):
         Join zombie workers of interval-triggered runs
         The results will be picked by REST server forked ends of the queues
         """
-        for plugin in self.plugins.values():
+        for plugin in list(self.plugins.values()):
             if not plugin.params['Interval']:
                 continue
             if plugin.current_run:
@@ -400,7 +403,7 @@ class Plugin(object):
         current time if now parameter is True
         """
         if time:
-            if isinstance(time, object) and type(time).__name__ == 'datetime':
+            if isinstance(time, datetime.datetime):
                 self.next_run = time
             else:
                 raise InvalidArgument(
@@ -429,7 +432,7 @@ class Plugin(object):
             lg.debug("Plugin %s: got result from queue", self.name)
             self.result.append(result)
 
-            if 'forced' in result.keys() and result['forced']:
+            if 'forced' in list(result.keys()) and result['forced']:
                 self.forced_result = self.get_last_result()
                 self.forced = False
 
@@ -702,7 +705,7 @@ class PluginWorker(multiprocessing.Process):
         """
         if isinstance(tbe, dict):
             escaped = {}
-            for key, value in tbe.iteritems():
+            for key, value in tbe.items():
                 if type(value) in [int, type(None), bool]:
                     escaped[key] = value
                 else:
@@ -744,7 +747,7 @@ class PluginWorker(multiprocessing.Process):
 
     def close_unnecessary_sockets(self):
         """close unnecessary open sockets cloned on fork"""
-        open_sockets = filter(lambda x: type(x) == socket._socketobject, gc.get_objects())
+        open_sockets = [x for x in gc.get_objects() if type(x) == socket._socketobject]
         for cur_socket in open_sockets:
             # close all TCP (SOCK_STREAM) sockets
             if cur_socket.type == socket.SOCK_STREAM:
@@ -808,7 +811,7 @@ class Result(object):
         Generate status from component results
         """
         status = default
-        for result in self.result['componentResults'].itervalues():
+        for result in self.result['componentResults'].values():
             if result['status'] == 'OK' and status not in ['WARN', 'ERROR']:
                 status = 'OK'
             elif result['status'] == 'WARN' and status != 'ERROR':
@@ -921,7 +924,7 @@ class Result(object):
         if not isinstance(result, dict):
             raise ValidationError("Component result must be dictionary")
 
-        for name, component in result.iteritems():
+        for name, component in result.items():
             try:
                 self._validate_msg(component['messages'])
             except KeyError:

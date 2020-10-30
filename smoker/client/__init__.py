@@ -2,11 +2,14 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import logging
 lg = logging.getLogger('smoker')
 
 import threading
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import simplejson
 import time
 import datetime
@@ -85,7 +88,7 @@ class Client(object):
 
         pool = []
         # For each host in plugins result, force run of it's plugins
-        for hostname, host in plugins.iteritems():
+        for hostname, host in plugins.items():
             t = threading.Thread(name=hostname, target=host_map[hostname].force_run, args=(host['plugins'],))
             t.daemon = True
             t.start()
@@ -97,7 +100,7 @@ class Client(object):
             self.wait(pool)
 
         result = {}
-        for hostname in plugins.iterkeys():
+        for hostname in plugins.keys():
             result[hostname] = host_map[hostname].get_result()
 
         result = self._format_plugins(result)
@@ -123,7 +126,7 @@ class Client(object):
         :param exclude_plugins: list of plugin names to exclude
         """
         result = {}
-        for name, host in plugins.iteritems():
+        for name, host in plugins.items():
             # No plugins for host, skip it
             try:
                 host['plugins']['items']
@@ -338,7 +341,7 @@ class Host(object):
         url = '%s%s' % (self.url, uri)
         lg.info("Host %s: requesting url %s" % (self.name, url))
         try:
-            fh = urllib2.urlopen(url, timeout=timeout, data=data)
+            fh = urllib.request.urlopen(url, timeout=timeout, data=data)
         except Exception as e:
             lg.error("Host %s: can't open resource %s: %s" % (self.name, url, e))
             return False
@@ -362,7 +365,7 @@ class Host(object):
             'pluginName2': {...},
         }
         """
-        plugins_list = plugins.keys()
+        plugins_list = list(plugins.keys())
         data = simplejson.dumps({
             'process' : {
                 'plugins' : plugins_list,

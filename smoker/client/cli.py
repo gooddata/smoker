@@ -9,6 +9,7 @@ See pydoc for command line tool smoker.py
 """
 from __future__ import print_function
 
+from past.builtins import basestring
 import argparse
 import datetime
 import glob
@@ -634,13 +635,13 @@ def main():
         output.append(format_plugin_run.format(**plugin))
 
         # Print last and next plugin run
-        for key, value in plugin['parameters'].iteritems():
+        for key, value in plugin['parameters'].items():
             output.append(format_plugin_param.format(key=key, value=value))
 
         # Print plugin messages
         if plugin['lastResult']['messages']:
             # For each message level
-            for level, message in plugin['lastResult']['messages'].iteritems():
+            for level, message in plugin['lastResult']['messages'].items():
                 # For each message
                 for msg in message:
                     if isinstance(format_plugin_msg, basestring):
@@ -660,7 +661,7 @@ def main():
                 # Print component messages
                 if component['messages']:
                     # For each message level
-                    for level, message in component['messages'].iteritems():
+                    for level, message in component['messages'].items():
                         # For each message
                         for msg in message:
                             if isinstance(format_plugin_component_msg, basestring):

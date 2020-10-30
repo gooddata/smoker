@@ -71,9 +71,9 @@ def plugins_to_xml(dict_data,
         """
         applied_args = {}
         if custom_dict:
-            for k, v in custom_dict.iteritems():
+            for k, v in custom_dict.items():
                 applied_args[k] = getattr(inst, v)
-        for k, v in kwargs.iteritems():
+        for k, v in kwargs.items():
             applied_args[k] = getattr(inst, v)
         return applied_args
 
@@ -90,17 +90,17 @@ def plugins_to_xml(dict_data,
                                         additional_fields=C[additional_fields])
 
     ts_data = {}
-    for res in results.iterkeys():
+    for res in results.keys():
         ts_data[res] = collections.defaultdict(list)
         ts_res = ts_data[res]
         for row in results[res]:
             ts_res[row.Node].append(row)
 
     junit_xml = XmlBuilder()
-    for template_name, ts in sorted(ts_data.iteritems()):
+    for template_name, ts in sorted(ts_data.items()):
         with junit_xml.testsuites as html_tss:
             html_tss(name=template_name)
-            for _node, tcs in sorted(ts.iteritems()):
+            for _node, tcs in sorted(ts.items()):
                 with html_tss.testsuite as html_ts:
                     first = tcs[0] if tcs else None
                     if first:

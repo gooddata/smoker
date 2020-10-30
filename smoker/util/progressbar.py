@@ -33,7 +33,11 @@ except NonInteractiveError as e:
     # fallback to non-progress wait
 """
 from __future__ import print_function
+from __future__ import division
 
+from builtins import str
+from past.utils import old_div
+from builtins import object
 import sys
 import numbers
 import threading
@@ -257,7 +261,7 @@ class ProgressElement(Element):
             width, height = (80, 37)
 
         # Bar should be half a terminal width
-        self.bar_width = width / 2
+        self.bar_width = old_div(width, 2)
 
         # Calculate step size
         part_size = float(self.bar_width) / float(self.main.items_count)

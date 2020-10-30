@@ -4,6 +4,7 @@
 Module providing base http server for smokerd REST API
 """
 
+from builtins import range
 from flask import Flask, request, make_response
 from flask_restful import Api, Resource, abort
 import json
@@ -50,7 +51,7 @@ def standardized_api_list(component):
     # Plugin object's structures
     results = dict(component)
     results[keyword] = []
-    for key, value in component[keyword].iteritems():
+    for key, value in component[keyword].items():
         value['name'] = key
         results[keyword].append({'componentResult': value})
 
@@ -180,7 +181,7 @@ class Plugins(Resource):
         """
         Print overview of all plugins
         """
-        return print_plugins(smokerd.pluginmgr.get_plugins().keys())
+        return print_plugins(list(smokerd.pluginmgr.get_plugins().keys()))
 
 
 class Plugin(Resource):

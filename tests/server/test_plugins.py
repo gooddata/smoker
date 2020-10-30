@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2015, GoodData(R) Corporation. All rights reserved
 
+# from builtins import str
+from builtins import range
+from builtins import object
 import copy
 import datetime
 import multiprocessing
@@ -49,9 +52,9 @@ class TestPluginManager(object):
             'Template': 'InvalidTemplate'}
     }
     conf_plugins = dict(
-        conf_plugins_to_load.items() +
-        conf_plugins_with_enabled_is_false.items() +
-        conf_plugins_with_template_is_false.items())
+        list(conf_plugins_to_load.items()) +
+        list(conf_plugins_with_enabled_is_false.items()) +
+        list(conf_plugins_with_template_is_false.items()))
 
     conf_templates = {
         'BasePlugin': {
@@ -80,20 +83,20 @@ class TestPluginManager(object):
     loaded_plugins = pluginmgr.get_plugins()
 
     def test_disabled_plugins_should_not_be_loaded(self):
-        plugins = self.conf_plugins_with_template_is_false.iteritems()
+        plugins = iter(self.conf_plugins_with_template_is_false.items())
         for plugin, options in plugins:
             if 'Enabled' in options and not options['Enabled']:
-                assert plugin not in self.loaded_plugins.keys()
+                assert plugin not in list(self.loaded_plugins.keys())
 
     def test_enabled_plugins_should_be_loaded(self):
-        for plugin, options in self.conf_plugins_to_load.iteritems():
+        for plugin, options in self.conf_plugins_to_load.items():
             if 'Enabled' in options and options['Enabled']:
-                assert plugin in self.loaded_plugins.keys()
+                assert plugin in list(self.loaded_plugins.keys())
 
     def test_plugins_without_enabled_option_should_be_loaded(self):
-        for plugin, options in self.conf_plugins_to_load.iteritems():
+        for plugin, options in self.conf_plugins_to_load.items():
             if 'Enabled' not in options:
-                assert plugin in self.loaded_plugins.keys()
+                assert plugin in list(self.loaded_plugins.keys())
 
     def test_plugins_are_rightly_loaded(self):
         assert len(self.loaded_plugins) == len(self.conf_plugins_to_load)
@@ -178,7 +181,7 @@ class TestPluginManager(object):
 
     def test_plugins_without_params_will_use_params_from_base_plugin(self):
         expected_interval = self.conf_templates['BasePlugin']['Interval']
-        for plugin_name, plugin in self.conf_plugins_to_load.iteritems():
+        for plugin_name, plugin in self.conf_plugins_to_load.items():
             if not plugin.get('Interval') and not plugin.get('Template'):
                 assert (self.loaded_plugins[plugin_name].params['Interval'] ==
                         expected_interval)
@@ -266,7 +269,7 @@ class TestPluginManager(object):
         pluginmgr = server_plugins.PluginManager(**copy.deepcopy(self.config))
         time.sleep(5.5)
         pluginmgr.run_plugins_with_interval()
-        for plugin in pluginmgr.plugins.values():
+        for plugin in list(pluginmgr.plugins.values()):
             assert plugin.current_run
 
     def test_get_action(self):
@@ -366,6 +369,7 @@ class TestPlugin(object):
 
     def test_schedule_run_with_time(self):
         next_run = (datetime.datetime.now() + datetime.timedelta(seconds=3))
+        print(type(next_run))
         self.plugin.schedule_run(time=next_run)
         assert self.plugin.next_run == next_run
 
@@ -530,7 +534,7 @@ class TestPluginWorker(object):
         worker = server_plugins.PluginWorker(**self.conf_worker)
         worker.run()
         procs = get_process_list()
-        assert expected in procs.values()
+        assert expected in list(procs.values())
 
     def test_drop_privileged_with_invalid_params(self):
         test_params = {

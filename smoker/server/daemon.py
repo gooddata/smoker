@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
+from builtins import str
+from builtins import object
 import glob
 import logging
 import os
@@ -115,7 +117,7 @@ class Smokerd(object):
 
         # Store parameters but don't overwite
         # those submitted by command line
-        for key, value in conf.iteritems():
+        for key, value in conf.items():
             if key in self.conf:
                 # User has submitted own parameter,
                 # use that instead of config one

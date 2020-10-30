@@ -84,7 +84,7 @@ def main():
     # Manage plugin result. We can't return much data to Nagios, so just say if it's alright or not
     results = dict((s, []) for s, _ in status_methods_pairs)
 
-    for plugin in plugins.values()[0]['plugins'].itervalues():
+    for plugin in list(plugins.values())[0]['plugins'].itervalues():
         plugin_name = plugin['name']
         if not plugin['lastResult']:
             results[UNKNOWN].append({'name': plugin_name, 'message': "plugin has no last result"})
@@ -110,13 +110,13 @@ def main():
 
     for status, exit_method in status_methods_pairs:
         if results[status]:
-            if len(plugins.values()[0]['plugins']) == 1:
+            if len(list(plugins.values())[0]['plugins']) == 1:
                 # if only one plugin has been executed, do not print summary
                 exit_method(results[status][0]['message'])
             else:
                 summary = ', '.join(["%s: %s" % (s, len(results[s])) for s, _ in status_methods_pairs if results[s]])
                 messages = ['\n'.join(["%s - %s - %s" % (s, item['name'], item['message']) for item in list])
-                            for s, list in results.iteritems() if list]
+                            for s, list in results.items() if list]
                 exit_method("%s\n%s" % (summary, '\n'.join(messages)))
 
 

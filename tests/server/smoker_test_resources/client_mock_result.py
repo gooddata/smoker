@@ -29,7 +29,7 @@ def rest_api_response(k, **kwargs):
         url + '/processes': dict(),
         url + '/plugins': plugins_response,
     }
-    if k in result.keys():
+    if k in list(result.keys()):
         if k == url + '/processes' and kwargs.get('data'):
             data = ast.literal_eval(kwargs.get('data'))
             if True in [x in plugin_list for x in data['process']['plugins']]:

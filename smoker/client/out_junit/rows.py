@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright © 2007-2018, All rights reserved. GoodData® Corporation, http://gooddata.com
 
+from builtins import zip
 import re
 import itertools
 import collections
@@ -175,8 +176,8 @@ def create(data, template, additional_fields=None):
             return templ['$' + name]
         elif value in templ:
             return templ[value]
-        types = itertools.ifilter(lambda x: x.startswith('!'),
-                                  templ.iterkeys())
+        types = filter(lambda x: x.startswith('!'),
+                                  iter(templ.keys()))
         for t in types:
             if isinstance(value, m_get_type(t)):
                 return templ[t]
@@ -197,7 +198,7 @@ def create(data, template, additional_fields=None):
             "return: From input dict, return dict only with fields with atomic values
             '''
             flds = {}
-            for field_candidate, value in d.iteritems():
+            for field_candidate, value in d.items():
                 if is_scalar(value):
                     flds[field_candidate] = value
             return flds
@@ -205,10 +206,10 @@ def create(data, template, additional_fields=None):
         def satisfy_fields(d, t):
             retVal = tuple()
             template_fields = fields_only(t)
-            plain_fields = list(itertools.ifilterfalse(lambda s: s.startswith('$'),
-                                                       template_fields.iterkeys()))
+            plain_fields = list(itertools.filterfalse(lambda s: s.startswith('$'),
+                                                       iter(template_fields.keys())))
             # make sure none of named template fields is missing
-            if set(d.iterkeys()).issuperset(set(plain_fields)):
+            if set(d.keys()).issuperset(set(plain_fields)):
                 for f in plain_fields:
                     match, bound_name = m_eq(d[f], t[f])
 
@@ -224,7 +225,7 @@ def create(data, template, additional_fields=None):
 
     def m_keyname(key, value, templ):
         def _match_names(name, templ):
-            for pattern in templ.iterkeys():
+            for pattern in templ.keys():
                 match, bound_name = m_eq(name, pattern)
                 if match:
                     return match, bound_name
@@ -278,7 +279,7 @@ def create(data, template, additional_fields=None):
     do_iter(tuple(), data, template)
     rows = []
     for p in processed:
-        traversed = zip(*filter(lambda t: t[0] is not None and t[1], p))
+        traversed = list(zip(*[t for t in p if t[0] is not None and t[1]]))
         fields = ' '.join(traversed[0])
         values = traversed[1]
         Row = row_tuple(fields, additional_fields=additional_fields)

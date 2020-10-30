@@ -6,6 +6,10 @@
 Module for various command executions
 """
 
+from future import standard_library
+standard_library.install_aliases()
+from past.builtins import basestring
+from builtins import object
 import subprocess
 import threading
 import os
@@ -211,7 +215,7 @@ class Command(object):
         # Run thread with command and wait
         thread = threading.Thread(target=target)
         lg.debug("Executing command: command='%s' %s"
-            % (self.command, ' '.join('%s=%s' % (a, b) for a, b in self.kwargs.iteritems())))
+            % (self.command, ' '.join('%s=%s' % (a, b) for a, b in self.kwargs.items())))
         time_start = datetime.datetime.now()
         thread.start()
 

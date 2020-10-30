@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2015, GoodData(R) Corporation. All rights reserved
 
+from builtins import range
+from builtins import object
 import copy
 import datetime
 import os
@@ -140,7 +142,7 @@ class TestRestAPI(object):
         assert plugin_result['plugin']['forcedResult']['messages']['info']
 
     def test_print_plugins(self):
-        plugins_to_print = self.conf_plugins.keys()
+        plugins_to_print = list(self.conf_plugins.keys())
         plugins_result = restserver.print_plugins(plugins_to_print)
         assert plugins_result['plugins']
         assert len(plugins_result['plugins']['items']) == len(plugins_to_print)
@@ -153,8 +155,8 @@ class TestRestAPI(object):
             assert plugin_result['parameters']
 
     def test_forced_print_plugins_with_forced_result(self):
-        plugins_to_print = self.conf_plugins.keys()
-        for plugin in self.smokerd.pluginmgr.get_plugins().values():
+        plugins_to_print = list(self.conf_plugins.keys())
+        for plugin in list(self.smokerd.pluginmgr.get_plugins().values()):
             plugin.forced = True
             plugin.run()
         time.sleep(0.5)
