@@ -127,7 +127,7 @@ class XmlBuilder(object):
         :param dict kwargs: kwargs will override values in custom dict
         '''
         if custom_dict:
-            for key, val in custom_dict.items():
+            for key, val in sorted(custom_dict.items()):
                 self._fields.append((key, val))
         for key, val in kwargs.items():
             self._fields.append((key, val))

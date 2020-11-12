@@ -97,16 +97,16 @@ def plugins_to_xml(dict_data,
             ts_res[row.Node].append(row)
 
     junit_xml = XmlBuilder()
-    for template_name, ts in sorted(ts_data.items()):
+    for template_name, ts in ts_data.items():
         with junit_xml.testsuites as html_tss:
             html_tss(name=template_name)
-            for _node, tcs in sorted(ts.items()):
+            for _node, tcs in ts.items():
                 with html_tss.testsuite as html_ts:
                     first = tcs[0] if tcs else None
                     if first:
                         html_ts(custom_dict=_apply(first,
                                                   custom_dict=C[ts_attr]))
-                    for tc in sorted(tcs):
+                    for tc in tcs:
                         html_tc = html_ts.testcase(
                             custom_dict=_apply(tc, custom_dict=C[tc_attr]))
 

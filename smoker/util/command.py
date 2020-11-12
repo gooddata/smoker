@@ -11,6 +11,7 @@ standard_library.install_aliases()
 from past.builtins import basestring
 from builtins import object
 import subprocess
+import sys
 import threading
 import os
 import psutil
@@ -135,6 +136,11 @@ def _unregister_cleanup(pid):
     lg.debug("Unregistering cleanup for pid %s" % pid)
 
     # Newer atexit has unregister, but we want to be compatible
+
+    if sys.version[0] == '3':
+        atexit.unregister(_proc_cleanup)
+        return
+    
     for handler in atexit._exithandlers:
         (func, args, kwargs) = handler
         if func == _proc_cleanup and args == (pid,):
@@ -204,8 +210,8 @@ class Command(object):
 
                 # Remove unwanted leading/trailing whitespaces from output
                 # Force stdout/stderr to be string if it's empty
-                self.stdout = self.stdout.strip() if self.stdout else ''
-                self.stderr = self.stderr.strip() if self.stderr else ''
+                self.stdout = self.stdout.decode('utf-8').strip() if self.stdout else ''
+                self.stderr = self.stderr.decode('utf-8').strip() if self.stderr else ''
 
                 self.returncode = self.process.returncode
             except Exception as e:

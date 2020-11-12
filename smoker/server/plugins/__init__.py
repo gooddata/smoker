@@ -461,6 +461,10 @@ class PluginWorker(multiprocessing.Process):
         self.forced = forced
         self.result = None
 
+       #if self._Popen is not None:
+       #    from multiprocessing.popen_fork import Popen
+       #    self._Popen = Popen
+
         super(PluginWorker, self).__init__()
         self.daemon = True
 
@@ -552,7 +556,7 @@ class PluginWorker(multiprocessing.Process):
             lg.debug("Plugin %s: stderr: %s" % (self.name, stderr.strip()))
 
         try:
-            parser = __import__(self.params['Parser'], globals(), locals(), ['Parser'], -1)
+            parser = __import__(self.params['Parser'], globals(), locals(), ['Parser'], 0)
         except ImportError as e:
             lg.error("Plugin %s: can't load parser %s: %s" % (self.name, self.params['Parser'], e))
             raise
@@ -580,7 +584,7 @@ class PluginWorker(multiprocessing.Process):
         """
         lg.debug("Plugin %s: running module %s" % (self.name, module))
         try:
-            plugin = __import__(module, globals(), locals(), ['Plugin'], -1)
+            plugin = __import__(module, globals(), locals(), ['Plugin'], 0)
         except ImportError as e:
             lg.error("Plugin %s: can't load module %s: %s" %
                      (self.name, module, e))
@@ -747,7 +751,11 @@ class PluginWorker(multiprocessing.Process):
 
     def close_unnecessary_sockets(self):
         """close unnecessary open sockets cloned on fork"""
-        open_sockets = [x for x in gc.get_objects() if type(x) == socket._socketobject]
+        open_sockets = list()
+        allowed = ['socket.socket', 'socket._socketobject']
+        for x in gc.get_objects():
+            if any(t for t in allowed if t in repr(type(x))):
+                open_sockets.append(x)
         for cur_socket in open_sockets:
             # close all TCP (SOCK_STREAM) sockets
             if cur_socket.type == socket.SOCK_STREAM:

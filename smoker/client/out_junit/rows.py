@@ -131,6 +131,8 @@ def create(data, template, additional_fields=None):
 
     def is_iterable(s):
         '''Object is iterable but not string.'''
+        if isinstance(s, (str, bytes)):
+            return False
         return hasattr(s, '__iter__')
 
     def is_scalar(obj):
@@ -144,10 +146,13 @@ def create(data, template, additional_fields=None):
         :rtype: iterator((value, value))
         :return: iterator of pairs [('key1', 'val1'), ('key1', 'val1'), ...]  or [(1, 'val1'), (2, 'val3')]
         '''
+        # is some string 
+        if isinstance(structure, (str, bytes)):
+            return tuple()
         # is some kind of dictionary
-        if isinstance(structure, collections.Mapping):
+        elif isinstance(structure, collections.Mapping):
             return iteritems(structure)
-        # is some kind of enumarable, but NOT string
+        # is some kind of enumarable
         elif isinstance(structure, collections.Sequence) or is_iterable(structure):
             return enumerate(structure)
         else:

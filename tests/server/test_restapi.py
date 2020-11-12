@@ -120,7 +120,7 @@ class TestRestAPI(object):
     def test_print_plugin_with_invalid_plugin_name(self):
         with pytest.raises(smoker_exceptions.NoSuchPlugin) as exc_info:
             restserver.print_plugin('InvalidPluginName')
-        assert 'Plugin InvalidPluginName not found' in exc_info.value
+        assert 'Plugin InvalidPluginName not found' in repr(exc_info.value)
 
     def test_forced_print_plugin_without_forced_result(self):
         with pytest.raises(smoker_exceptions.InProgress):

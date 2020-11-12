@@ -79,7 +79,7 @@ class TestDaemon(object):
         ]
         conf_smokerd += '\n'.join(conf_plugins)
 
-        with open(yaml_file, 'wb') as fp:
+        with open(yaml_file, 'w') as fp:
             fp.write(conf_smokerd)
 
         smokerd = Smokerd(config=yaml_file)
@@ -93,7 +93,7 @@ class TestDaemon(object):
         expected['bind_host'] = '0.0.0.0'
         expected['bind_port'] = 8086
 
-        with open(yaml_file, 'wb') as fp:
+        with open(yaml_file, 'w') as fp:
             fp.write('plugins: !include_dir %s/plugins\n' % self.conf_dir)
             fp.write('bind_host: 0.0.0.0\n')
             fp.write('bind_port: 8086\n')
@@ -114,7 +114,7 @@ class TestDaemon(object):
             '    uname: !include %s/plugins/uname.yaml' % self.conf_dir
         ]
 
-        with open(yaml_file, 'wb') as fp:
+        with open(yaml_file, 'w') as fp:
             fp.write('\n'.join(conf_plugins))
 
         smokerd = Smokerd(config=yaml_file)
@@ -126,7 +126,7 @@ class TestDaemon(object):
         expected = copy.deepcopy(self.expected_plugins)
         expected['config'] = yaml_file
 
-        with open(yaml_file, 'wb') as fp:
+        with open(yaml_file, 'w') as fp:
             fp.write('plugins: !include_dir %s/plugins' % self.conf_dir)
         smokerd = Smokerd(config=yaml_file)
         os.remove(yaml_file)
@@ -136,23 +136,23 @@ class TestDaemon(object):
         expected = 'No such file or directory'
         with pytest.raises(IOError) as exc_info:
             Smokerd(config='InvalidFilePath')
-        assert expected in exc_info.value
+        assert expected in repr(exc_info.value)
 
     def test_load_config_with_invalid_include_file_path(self):
         expected = 'No such file or directory'
 
         yaml_file = '%s/%s.yaml' % (self.conf_dir, generate_unique_file())
-        with open(yaml_file, 'wb') as fp:
+        with open(yaml_file, 'w') as fp:
             fp.write('plugins: !include /InvalidFilePath')
 
         with pytest.raises(IOError) as exc_info:
             Smokerd(config=yaml_file)
-        assert expected in exc_info.value
+        assert expected in repr(exc_info.value)
         os.remove(yaml_file)
 
     def test_load_config_with_invalid_include_dir_path(self):
         yaml_file = '%s/%s.yaml' % (self.conf_dir, generate_unique_file())
-        with open(yaml_file, 'wb') as fp:
+        with open(yaml_file, 'w') as fp:
             fp.write('plugins: !include_dir /InvalidFilePath')
 
         smokerd = Smokerd(config=yaml_file)
@@ -163,18 +163,18 @@ class TestDaemon(object):
     def test_load_config_with_invalid_yaml_format(self):
         yaml_file = '%s/%s.yaml' % (self.conf_dir, generate_unique_file())
 
-        with open(yaml_file, 'wb') as fp:
+        with open(yaml_file, 'w') as fp:
             fp.write('plugins InvalidFormat')
         with pytest.raises(AttributeError) as exc_info:
             Smokerd(config=yaml_file)
-        assert "'str' object has no attribute 'items'" in exc_info.value
+        assert "'str' object has no attribute 'items'" in repr(exc_info.value)
         os.remove(yaml_file)
 
-        with open(yaml_file, 'wb') as fp:
+        with open(yaml_file, 'w') as fp:
             fp.write('- plugins InvalidFormat')
         with pytest.raises(AttributeError) as exc_info:
             Smokerd(config=yaml_file)
-        assert "'list' object has no attribute 'items'" in exc_info.value
+        assert "'list' object has no attribute 'items'" in repr(exc_info.value)
         os.remove(yaml_file)
 
     def test_load_config_from_default_path(self):

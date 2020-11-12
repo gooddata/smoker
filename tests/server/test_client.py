@@ -91,7 +91,7 @@ class TestHost(object):
         assert not host.open(resource='InvalidResource')
         with pytest.raises(Exception) as exc_info:
             host.open()
-        assert expected_exc in exc_info.value
+        assert expected_exc in repr(exc_info.value)
 
 
 class TestClient(object):
@@ -110,7 +110,7 @@ class TestClient(object):
         cli = smoker_client.Client(['%s:8086' % self.hostname])
         with pytest.raises(TypeError) as exc_info:
             cli.get_plugins()
-        assert "'NoneType' object is not iterable" in exc_info.value
+        assert "'NoneType' object is not iterable" in repr(exc_info.value)
 
     @mock.patch('urllib.request.urlopen', rest_api_response)
     def test_get_plugins(self):
@@ -142,7 +142,7 @@ class TestClient(object):
         cli.open(resource='InvalidResource') == expected_response
         with pytest.raises(Exception) as exc_info:
             cli.open()
-        assert expected_exc in exc_info.value
+        assert expected_exc in repr(exc_info.value)
 
     @mock.patch('urllib.request.urlopen', rest_api_response)
     def test_force_run(self):
@@ -237,19 +237,23 @@ class TestClient(object):
 
         plugins = cli.get_plugins(filters=list())
         expected = '\n'.join(client_mock_result.xml_result_all_plugins)
-        assert smoker_cli.plugins_to_xml(plugins) == expected
+        result = smoker_cli.plugins_to_xml(plugins)
+        assert result == expected
 
         plugins = cli.get_plugins(filters=list(), exclude_plugins=['Hostname'])
         expected = '\n'.join(client_mock_result.xml_result_uptime_uname)
-        assert smoker_cli.plugins_to_xml(plugins) == expected
+        result = smoker_cli.plugins_to_xml(plugins)
+        assert result == expected
 
         plugins = cli.get_plugins(filters=list(), exclude_plugins=['Uname'])
         expected = '\n'.join(client_mock_result.xml_result_uptime_hostname)
-        assert smoker_cli.plugins_to_xml(plugins) == expected
+        result = smoker_cli.plugins_to_xml(plugins)
+        assert result == expected
 
         plugins = cli.get_plugins(filters=list(), exclude_plugins=['Uptime'])
         expected = '\n'.join(client_mock_result.xml_result_hostname_uname)
-        assert smoker_cli.plugins_to_xml(plugins) == expected
+        result = smoker_cli.plugins_to_xml(plugins)
+        assert result == expected
 
 
 class TestCleanUp(object):
