@@ -181,8 +181,8 @@ def create(data, template, additional_fields=None):
             return templ['$' + name]
         elif value in templ:
             return templ[value]
-        types = filter(lambda x: x.startswith('!'),
-                                  iter(templ.keys()))
+        types = list(filter(lambda x: x.startswith('!'),
+                                  iter(templ.keys())))
         for t in types:
             if isinstance(value, m_get_type(t)):
                 return templ[t]

@@ -195,7 +195,7 @@ class Plugin(Resource):
         try:
             plugin = print_plugin(name)
         except exceptions.NoSuchPlugin as e:
-            abort(404, message=e.message)
+            abort(404, message=str(e))
         history = get_plugin_history(name)
         plugin['results'] = history
 
@@ -269,7 +269,7 @@ class Processes(Resource):
         try:
             id = smokerd.pluginmgr.add_process(plugins, filter)
         except Exception as e:
-            abort(500, message=e.message)
+            abort(500, message=str(e))
 
         return print_in_progress(id)
 
