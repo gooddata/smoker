@@ -1,5 +1,13 @@
 %global with_check 0
 
+%if 0%{?el8}
+%global _py %{__python3}
+%global py_sitelib %{python3_sitelib}
+%else
+%global _py %{__python2}
+%global py_sitelib %{python2_sitelib}
+%endif
+
 Name:		smoker
 Version:	2.1.14
 Release:	1%{?dist}
@@ -9,13 +17,16 @@ Summary:	Smoke Testing Framework
 Group:		Applications/System
 License:	BSD
 URL:		https://github.com/gooddata/smoker
-Source0:	smoker.tar.gz
+Source0:	%{name}.tar.gz
 
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:	noarch
-BuildRequires:	python2-devel python2-setuptools python-flask-restful python-setproctitle python-psutil python-simplejson python-argparse PyYAML
-Requires:	python-flask-restful >= 1:0.3.1-5
-Requires:	python-setproctitle
+
+%if 0%{?el8}
+BuildRequires:  python3-setuptools python3-setproctitle python3-psutil
+%else
+BuildRequires:	python2-devel python2-setuptools python-setproctitle python2-psutil
+%endif
 Obsoletes:	gdc-smoker
 
 BuildRequires:  systemd
@@ -34,11 +45,11 @@ for it's command-line or other client.
 %setup -q -c
 
 %build
-%{__python} setup.py build
+%{_py} setup.py build
 
 %install
 %{__rm} -rf %{buildroot}
-%{__python} setup.py install -O1 --skip-build --root %{buildroot}
+%{_py} setup.py install -O1 --skip-build --root %{buildroot}
 mkdir -p %{buildroot}/usr/share/doc/smoker/
 install -m 644 etc/* %{buildroot}/usr/share/doc/smoker/
 install -d %{buildroot}/%{_unitdir}
@@ -46,7 +57,8 @@ install -pm644 smokerd.service %{buildroot}/%{_unitdir}/smokerd.service
 
 %if 0%{?with_check}
 %check
-%{__python} setup.py test
+
+%{_py} setup.py test
 %endif #with_check
 
 %clean
@@ -54,8 +66,8 @@ install -pm644 smokerd.service %{buildroot}/%{_unitdir}/smokerd.service
 
 %files
 %defattr(-,root,root,-)
-%{python_sitelib}/*.egg-info
-%{python_sitelib}/smoker
+%{py_sitelib}/*.egg-info
+%{py_sitelib}/smoker
 %{_unitdir}/smokerd.service
 /usr/share/doc/smoker/smokercli-example.yaml
 /usr/share/doc/smoker/smokerd-example.yaml

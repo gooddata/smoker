@@ -12,6 +12,23 @@ if 'upload' in sys.argv or 'register' in sys.argv:
 else:
     name = 'smoker'
 
+if sys.version[0] == '3':
+    # req_path = 'py3_requirements.txt'
+    requirements = [
+            'PyYAML', 'simplejson', 'psutil', 'setproctitle',
+            'Flask-RESTful~=0.3', 'future'
+            ]
+else:
+    # req_path = 'py2_requirements.txt'
+    requirements = [
+            'PyYAML', 'argparse', 'simplejson', 'psutil',
+            'setproctitle', 'Flask-RESTful~=0.3', 'future'
+            ]
+
+# TODO -> Decide if loaded from req.txt files or declared statically here.
+# with open('requirements.txt') as f:
+#     requirements = f.read().splitlines()
+
 # Parameters for build
 params = {
     'name': name,
@@ -51,12 +68,14 @@ params = {
         'Operating System :: POSIX',
         'Programming Language :: Python',
         'Programming Language :: Python :: Implementation :: CPython',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
         'Topic :: Software Development :: Testing',
         'Topic :: System :: Monitoring',
     ],
     'platforms': ['POSIX'],
     'provides': ['smoker'],
-    'install_requires': ['PyYAML', 'argparse', 'simplejson', 'psutil', 'setproctitle', 'Flask-RESTful'],
+    'install_requires': requirements, 
     'test_suite': 'tests',
     'package_data': {'smoker': ['DESCRIPTION.md']}
 }
