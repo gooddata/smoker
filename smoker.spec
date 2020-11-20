@@ -9,7 +9,7 @@
 %endif
 
 Name:		smoker
-Version:	2.1.14
+Version:	2.2.0
 Release:	1%{?dist}
 Epoch:		1
 Summary:	Smoke Testing Framework
