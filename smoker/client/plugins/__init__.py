@@ -38,13 +38,13 @@ class SpecificArgument(object):
     """
     Argparse argument to be added to the smoker CLI specific to this plugin
     """
-    def __init__(self, short, long, **kwargs):
-        if short and int:
-            self.args = [short, int]
-        elif short:
-            self.args = [short]
+    def __init__(self, shorter, longer, **kwargs):
+        if shorter and longer:
+            self.args = [shorter, longer]
+        elif shorter:
+            self.args = [shorter]
         else:
-            self.args = [int]
+            self.args = [longer]
         self.kwargs = kwargs
 
 

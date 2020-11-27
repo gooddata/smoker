@@ -208,7 +208,7 @@ class AnimationElement(Element):
         # Update state if we are animated element
         if isinstance(self.animation, list):
             index = self.__update_index()
-            return str(self.animation[index])
+            return self.animation[index]
         else:
             raise InvalidAnimationError('Animation has to be list not %s' % type(self.animation))
 

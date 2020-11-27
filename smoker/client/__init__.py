@@ -291,6 +291,9 @@ class Host(object):
     address = None
     links = {}
 
+    _jd = simplejson.JSONDecoder(encoding=None, object_hook=None,
+                                object_pairs_hook=None)
+
     _result  = None
 
     def __init__(self, address, default_port=8086):
@@ -347,7 +350,7 @@ class Host(object):
             return False
 
         try:
-            json = simplejson.load(fh)
+            json = self._jd.decode(fh.read(), _PY3=True)
         except Exception as e:
             lg.error("Host %s: can't load response as JSON: %s" % (self.name, e))
             return False
