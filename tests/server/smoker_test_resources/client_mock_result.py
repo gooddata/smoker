@@ -31,7 +31,10 @@ def rest_api_response(k, **kwargs):
     }
     if k in list(result.keys()):
         if k == url + '/processes' and kwargs.get('data'):
-            data = ast.literal_eval(kwargs.get('data'))
+            raw_data = kwargs.get('data')
+            if isinstance(raw_data, bytes):
+                data = raw_data.decode('utf-8')
+            data = ast.literal_eval(data)
             if True in [x in plugin_list for x in data['process']['plugins']]:
                 location = len(PROCESSES)
                 process = {

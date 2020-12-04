@@ -13,8 +13,12 @@ import urllib.request, urllib.error, urllib.parse
 import simplejson
 import time
 import datetime
+import sys
 
 from smoker.util.progressbar import ProgressBar, NonInteractiveError
+
+_PY3 =  sys.version_info[0] == 3
+
 
 class Client(object):
     """
@@ -291,9 +295,6 @@ class Host(object):
     address = None
     links = {}
 
-    _jd = simplejson.JSONDecoder(encoding=None, object_hook=None,
-                                object_pairs_hook=None)
-
     _result  = None
 
     def __init__(self, address, default_port=8086):
@@ -341,6 +342,9 @@ class Host(object):
                 lg.error("Can't find resource %s" % resource)
                 return False
 
+        if data:
+            data = data.encode('utf-8')
+
         url = '%s%s' % (self.url, uri)
         lg.info("Host %s: requesting url %s" % (self.name, url))
         try:
@@ -349,8 +353,11 @@ class Host(object):
             lg.error("Host %s: can't open resource %s: %s" % (self.name, url, e))
             return False
 
+        fh = fh.read()
+        if not _PY3:
+            fh = fh.decode('utf-8')
         try:
-            json = self._jd.decode(fh.read(), _PY3=True)
+            json = simplejson.loads(fh)
         except Exception as e:
             lg.error("Host %s: can't load response as JSON: %s" % (self.name, e))
             return False

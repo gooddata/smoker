@@ -21,6 +21,9 @@ import logging
 import time
 lg = logging.getLogger(__name__)
 
+_PY3 = sys.version_info[0] == 3
+
+
 def execute(command, timeout=None, **kwargs):
     """
     Execute command, wrapper for Command class
@@ -137,7 +140,7 @@ def _unregister_cleanup(pid):
 
     # Newer atexit has unregister, but we want to be compatible
 
-    if sys.version[0] == '3':
+    if _PY3:
         atexit.unregister(_proc_cleanup)
         return
     

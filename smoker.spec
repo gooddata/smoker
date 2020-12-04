@@ -25,7 +25,7 @@ BuildArch:	noarch
 %if 0%{?el8}
 BuildRequires:  python3-setuptools python3-setproctitle python3-psutil
 %else
-BuildRequires:	python2-devel python2-setuptools python-setproctitle python2-psutil
+BuildRequires:  python2-devel python2-setuptools python-setproctitle python2-psutil
 %endif
 Obsoletes:	gdc-smoker
 
