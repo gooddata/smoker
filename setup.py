@@ -12,7 +12,7 @@ if 'upload' in sys.argv or 'register' in sys.argv:
 else:
     name = 'smoker'
 
-if sys.version[0] == '3':
+if sys.version_info[0] == 3:
     # req_path = 'py3_requirements.txt'
     requirements = [
             'PyYAML', 'simplejson', 'psutil', 'setproctitle',
