@@ -1,0 +1,7 @@
+argparse
+Flask-RESTful~=0.3
+future
+psutil
+PyYAML
+simplejson
+setproctitle

@@ -13,21 +13,12 @@ else:
     name = 'smoker'
 
 if sys.version_info[0] == 3:
-    # req_path = 'py3_requirements.txt'
-    requirements = [
-            'PyYAML', 'simplejson', 'psutil', 'setproctitle',
-            'Flask-RESTful~=0.3', 'future'
-            ]
+    req_path = 'py3_requirements.txt'
 else:
-    # req_path = 'py2_requirements.txt'
-    requirements = [
-            'PyYAML', 'argparse', 'simplejson', 'psutil',
-            'setproctitle', 'Flask-RESTful~=0.3', 'future'
-            ]
+    req_path = 'py2_requirements.txt'
 
-# TODO -> Decide if loaded from req.txt files or declared statically here.
-# with open('requirements.txt') as f:
-#     requirements = f.read().splitlines()
+with open(req_path) as f:
+    requirements = f.read().splitlines()
 
 # Parameters for build
 params = {
