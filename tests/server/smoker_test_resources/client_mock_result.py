@@ -4,7 +4,7 @@
 
 import ast
 import datetime
-from flask.ext.restful import abort
+from flask_restful import abort
 import json
 import os
 import re
@@ -31,7 +31,10 @@ def rest_api_response(k, **kwargs):
     }
     if k in result.keys():
         if k == url + '/processes' and kwargs.get('data'):
-            data = ast.literal_eval(kwargs.get('data'))
+            raw_data = kwargs.get('data')
+            if isinstance(raw_data, bytes):
+                data = raw_data.decode('utf-8')
+            data = ast.literal_eval(data)
             if True in [x in plugin_list for x in data['process']['plugins']]:
                 location = len(PROCESSES)
                 process = {
@@ -456,38 +459,38 @@ tap_result_hostname_uname = [
 xml_result_all_plugins = [
     '',
     '  <testsuites name="All">',
-    '    <testsuite name="node %s" timestamp="2016-05-31 15:32:53" hostname="%s">' % (HOSTNAME, HOSTNAME),
-    '      <testcase classname="%s.Hostname" name="Hostname">' % HOSTNAME,
-    '        <error message="/bin/sh: 1: InvalidCommand: not found"></error></testcase>',
+    '    <testsuite hostname="%s" name="node %s" timestamp="2016-05-31 15:32:53">' % (HOSTNAME, HOSTNAME),
     '      <testcase classname="%s.Uname" name="Uname">' % HOSTNAME,
     '        <system-out message="Skipped because of maintenance in progress"></system-out></testcase>',
-    '      <testcase classname="%s.Uptime" name="Uptime"></testcase></testsuite></testsuites>' % HOSTNAME
+    '      <testcase classname="%s.Uptime" name="Uptime"></testcase>' % HOSTNAME,
+    '      <testcase classname="%s.Hostname" name="Hostname">' % HOSTNAME,
+    '        <error message="/bin/sh: 1: InvalidCommand: not found"></error></testcase></testsuite></testsuites>'
 ]
 
 xml_result_uptime_uname = [
     '',
     '  <testsuites name="All">',
-    '    <testsuite name="node %s" timestamp="2016-05-31 15:32:53" hostname="%s">' % (HOSTNAME, HOSTNAME),
+    '    <testsuite hostname="%s" name="node %s" timestamp="2016-05-31 15:32:53">' % (HOSTNAME, HOSTNAME),
     '      <testcase classname="%s.Uname" name="Uname">' % HOSTNAME,
     '        <system-out message="Skipped because of maintenance in progress"></system-out></testcase>',
     '      <testcase classname="%s.Uptime" name="Uptime"></testcase></testsuite></testsuites>' % HOSTNAME
 ]
 
 xml_result_uptime_hostname = [
-    '',
-    '  <testsuites name="All">',
-    '    <testsuite name="node %s" timestamp="2016-05-31 15:32:53" hostname="%s">' % (HOSTNAME, HOSTNAME),
-    '      <testcase classname="%s.Hostname" name="Hostname">' % HOSTNAME,
-    '        <error message="/bin/sh: 1: InvalidCommand: not found"></error></testcase>',
-    '      <testcase classname="%s.Uptime" name="Uptime"></testcase></testsuite></testsuites>' % HOSTNAME
+'',
+'  <testsuites name="All">',
+'    <testsuite hostname="%s" name="node %s" timestamp="2016-05-31 15:32:53">' % (HOSTNAME, HOSTNAME),
+'      <testcase classname="%s.Uptime" name="Uptime"></testcase>' % HOSTNAME,
+'      <testcase classname="%s.Hostname" name="Hostname">' % HOSTNAME,
+'        <error message="/bin/sh: 1: InvalidCommand: not found"></error></testcase></testsuite></testsuites>'
 ]
 
 xml_result_hostname_uname = [
     '',
     '  <testsuites name="All">',
-    '    <testsuite name="node %s" timestamp="2016-05-31 15:32:53" hostname="%s">' % (HOSTNAME, HOSTNAME),
-    '      <testcase classname="%s.Hostname" name="Hostname">' % HOSTNAME,
-    '        <error message="/bin/sh: 1: InvalidCommand: not found"></error></testcase>',
+    '    <testsuite hostname="%s" name="node %s" timestamp="2016-05-31 15:32:53">' % (HOSTNAME, HOSTNAME),
     '      <testcase classname="%s.Uname" name="Uname">' % HOSTNAME,
-    '        <system-out message="Skipped because of maintenance in progress"></system-out></testcase></testsuite></testsuites>'
+    '        <system-out message="Skipped because of maintenance in progress"></system-out></testcase>',
+    '      <testcase classname="%s.Hostname" name="Hostname">' % HOSTNAME,
+    '        <error message="/bin/sh: 1: InvalidCommand: not found"></error></testcase></testsuite></testsuites>'
 ]

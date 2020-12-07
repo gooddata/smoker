@@ -10,6 +10,7 @@ Parameters:
     Volume  - volume to run mount/unmount test. If it's not set, mount test won't be executed.
 """
 
+from builtins import range
 import logging
 lg = logging.getLogger('smokerd.plugin.glusterfs')
 
@@ -67,7 +68,7 @@ class Plugin(BasePlugin):
             'warn' : [],
         }
 
-        for host, peer in peers.iteritems():
+        for host, peer in peers.items():
             if peer['connected'] == True:
                 messages['info'].append('Peer %s is healthy: %s (Connected)' % (host, peer['status']))
             else:
@@ -95,11 +96,11 @@ class Plugin(BasePlugin):
             status = 'ERROR'
 
         # Check status of each volume
-        for vol, nodes in volumes.iteritems():
+        for vol, nodes in volumes.items():
             if nodes['status'] != 1:
                 # Get broken nodes
                 failed = []
-                for node, status in nodes.iteritems():
+                for node, status in nodes.items():
                     if node != 'status' and status != 1:
                         failed.append(node)
                 

@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2015, GoodData(R) Corporation. All rights reserved
 
+# from builtins import str
+from builtins import range
+from builtins import object
 import copy
 import datetime
 import multiprocessing
@@ -49,9 +52,9 @@ class TestPluginManager(object):
             'Template': 'InvalidTemplate'}
     }
     conf_plugins = dict(
-        conf_plugins_to_load.items() +
-        conf_plugins_with_enabled_is_false.items() +
-        conf_plugins_with_template_is_false.items())
+        list(conf_plugins_to_load.items()) +
+        list(conf_plugins_with_enabled_is_false.items()) +
+        list(conf_plugins_with_template_is_false.items()))
 
     conf_templates = {
         'BasePlugin': {
@@ -80,18 +83,18 @@ class TestPluginManager(object):
     loaded_plugins = pluginmgr.get_plugins()
 
     def test_disabled_plugins_should_not_be_loaded(self):
-        plugins = self.conf_plugins_with_template_is_false.iteritems()
+        plugins = iter(self.conf_plugins_with_template_is_false.items())
         for plugin, options in plugins:
             if 'Enabled' in options and not options['Enabled']:
                 assert plugin not in self.loaded_plugins.keys()
 
     def test_enabled_plugins_should_be_loaded(self):
-        for plugin, options in self.conf_plugins_to_load.iteritems():
+        for plugin, options in self.conf_plugins_to_load.items():
             if 'Enabled' in options and options['Enabled']:
                 assert plugin in self.loaded_plugins.keys()
 
     def test_plugins_without_enabled_option_should_be_loaded(self):
-        for plugin, options in self.conf_plugins_to_load.iteritems():
+        for plugin, options in self.conf_plugins_to_load.items():
             if 'Enabled' not in options:
                 assert plugin in self.loaded_plugins.keys()
 
@@ -123,7 +126,7 @@ class TestPluginManager(object):
             server_plugins.PluginManager(plugins=dict(),
                                          templates=self.conf_templates,
                                          actions=actions)
-        assert 'No plugins loaded!' in exc_info.value
+        assert 'No plugins loaded!' in repr(exc_info.value)
 
     def test_load_plugins_without_any_template(self):
         actions = copy.deepcopy(self.conf_actions)
@@ -178,7 +181,7 @@ class TestPluginManager(object):
 
     def test_plugins_without_params_will_use_params_from_base_plugin(self):
         expected_interval = self.conf_templates['BasePlugin']['Interval']
-        for plugin_name, plugin in self.conf_plugins_to_load.iteritems():
+        for plugin_name, plugin in self.conf_plugins_to_load.items():
             if not plugin.get('Interval') and not plugin.get('Template'):
                 assert (self.loaded_plugins[plugin_name].params['Interval'] ==
                         expected_interval)
@@ -195,13 +198,13 @@ class TestPluginManager(object):
     def test_get_plugins_with_invalid_name(self):
         with pytest.raises(smoker_exceptions.NoSuchPlugin) as exc_info:
             self.pluginmgr.get_plugin('InvalidPlugin')
-        assert 'Plugin InvalidPlugin not found' in exc_info.value
+        assert 'Plugin InvalidPlugin not found' in repr(exc_info.value)
 
     def test_get_non_exist_template(self):
         with pytest.raises(smoker_exceptions.TemplateNotFound) as exc_info:
             self.pluginmgr.get_template('InvalidTemplate')
         expected = 'Can\'t find configured template InvalidTemplate'
-        assert expected in exc_info.value
+        assert expected in repr(exc_info.value)
 
     def test_get_template(self):
         assert (self.pluginmgr.get_template('BasePlugin') ==
@@ -254,7 +257,7 @@ class TestPluginManager(object):
         with pytest.raises(smoker_exceptions.NoSuchPlugin) as exc_info:
             pluginmgr = server_plugins.PluginManager(**conf)
             pluginmgr.add_process(plugins=['InvalidPlugin'])
-        assert 'Plugin InvalidPlugin not found' in exc_info.value
+        assert 'Plugin InvalidPlugin not found' in repr(exc_info.value)
 
     def test_get_process_with_invalid_process_id(self):
         with pytest.raises(IndexError):
@@ -277,7 +280,7 @@ class TestPluginManager(object):
         with pytest.raises(smoker_exceptions.ActionNotFound) as exc_info:
             self.pluginmgr.get_action('InvalidAction')
         expected = 'Can\'t find configured action InvalidAction'
-        assert expected in exc_info.value
+        assert expected in repr(exc_info.value)
 
     def test_join_timed_plugin_workers(self):
         pluginmgr = server_plugins.PluginManager(**copy.deepcopy(self.config))
@@ -336,12 +339,12 @@ class TestPlugin(object):
         with pytest.raises(smoker_exceptions.InvalidConfiguration) as exc_info:
             params = dict(self.test_params_default, **{'Timeout': 0})
             server_plugins.Plugin(name=self.test_plugin_name, params=params)
-        assert 'Timeout parameter can\'t be 0' in exc_info.value
+        assert 'Timeout parameter can\'t be 0' in repr(exc_info.value)
 
         with pytest.raises(smoker_exceptions.InvalidConfiguration) as exc_info:
             params = dict(self.test_params_default, **{'Command': None})
             server_plugins.Plugin(name=self.test_plugin_name, params=params)
-        assert 'Command or Module parameter has to be set' in exc_info.value
+        assert 'Command or Module parameter has to be set' in repr(exc_info.value)
 
         with pytest.raises(smoker_exceptions.InvalidConfiguration) as exc_info:
             test_params = {
@@ -351,7 +354,7 @@ class TestPlugin(object):
             params = dict(self.test_params_default, **test_params)
             server_plugins.Plugin(name=self.test_plugin_name, params=params)
         expected = 'Command and Module parameters cannot be set together'
-        assert expected in exc_info.value
+        assert expected in repr(exc_info.value)
 
         with pytest.raises(smoker_exceptions.InvalidConfiguration) as exc_info:
             test_params = {
@@ -362,10 +365,11 @@ class TestPlugin(object):
             params = dict(self.test_params_default, **test_params)
             server_plugins.Plugin(name=self.test_plugin_name, params=params)
         expected = 'Parser can be used only with Command parameter'
-        assert expected in exc_info.value
+        assert expected in repr(exc_info.value)
 
     def test_schedule_run_with_time(self):
         next_run = (datetime.datetime.now() + datetime.timedelta(seconds=3))
+        print(type(next_run))
         self.plugin.schedule_run(time=next_run)
         assert self.plugin.next_run == next_run
 
@@ -373,12 +377,12 @@ class TestPlugin(object):
         with pytest.raises(smoker_exceptions.InvalidArgument) as exc_info:
             self.plugin.schedule_run(time=15)
         expected = 'Parameter time has to be an instance of datetime object'
-        assert expected in exc_info.value
+        assert expected in repr(exc_info.value)
 
         with pytest.raises(smoker_exceptions.InvalidArgument) as exc_info:
             self.plugin.schedule_run(time=time.ctime())
         expected = 'Parameter time has to be an instance of datetime object'
-        assert expected in exc_info.value
+        assert expected in repr(exc_info.value)
 
     def test_schedule_run_now(self):
         self.plugin.schedule_run(now=True)
@@ -542,7 +546,7 @@ class TestPluginWorker(object):
                                              queue=self.queue, params=params)
         with pytest.raises(OSError) as exc_info:
             worker.run()
-        assert 'Operation not permitted' in exc_info.value
+        assert 'Operation not permitted' in repr(exc_info.value)
 
     def test_drop_privileged_with_invalid_params_type(self):
         test_params = {
@@ -603,10 +607,12 @@ class TestPluginWorker(object):
         worker = server_plugins.PluginWorker(name='Hostname',
                                              queue=self.queue, params=params)
         worker.run()
+        error = worker.result['messages']['error'][0]
         assert 'status' in worker.result and worker.result['status'] == 'ERROR'
         assert 'info' and 'error' in worker.result['messages']
         assert worker.result['messages']['info'] == expected_info
-        assert worker.result['messages']['error'] == expected_error
+        assert 'Parser run failed: No module named ' in error
+        assert 'InvalidParser' in error
 
     def test_run_parser(self):
         expected = {
@@ -645,7 +651,8 @@ class TestPluginWorker(object):
 
         with pytest.raises(ImportError) as exc_info:
             worker.run_parser(stdout='GoodData', stderr='')
-        assert 'No module named InvalidParser' in exc_info.value
+        assert 'No module named ' in repr(exc_info.value)
+        assert 'InvalidParser' in repr(exc_info.value)
 
     def test_run_module(self):
         worker = server_plugins.PluginWorker(**self.conf_worker)
@@ -660,7 +667,8 @@ class TestPluginWorker(object):
         module = 'InvalidModule'
         with pytest.raises(ImportError) as exc_info:
             worker.run_module(module)
-        assert 'No module named InvalidModule' in exc_info.value
+        assert 'No module named ' in repr(exc_info.value)
+        assert 'InvalidModule' in repr(exc_info.value)
 
     def test_escape(self):
         worker = server_plugins.PluginWorker(**self.conf_worker)
@@ -679,7 +687,7 @@ class TestPluginWorker(object):
         tbe_tuple = (1, '[Good]Data', '/\G')
         with pytest.raises(Exception) as exc_info:
             worker.escape(tbe=tbe_tuple)
-        assert 'Unknown data type' in exc_info.value
+        assert 'Unknown data type' in repr(exc_info.value)
 
     def test_get_params(self):
         worker = server_plugins.PluginWorker(**self.conf_worker)
@@ -734,12 +742,12 @@ class TestResult(object):
         expected = 'Can\'t generate overall status without component results'
         with pytest.raises(Exception) as exc_info:
             result.set_status()
-        assert expected in exc_info.value
+        assert expected in repr(exc_info.value)
 
         expected = 'Status has to be OK, ERROR or WARN'
         with pytest.raises(smoker_exceptions.InvalidArgument) as exc_info:
             result.set_status('InvalidStatus')
-        assert expected in exc_info.value
+        assert expected in repr(exc_info.value)
 
     def test_add_msg(self):
         for level in ['info', 'warn', 'error']:
@@ -756,7 +764,7 @@ class TestResult(object):
         result = server_plugins.Result()
         with pytest.raises(smoker_exceptions.InvalidArgument) as exc_info:
             result.add_msg('InvalidLevel', 'Gooddata')
-        assert 'Level has to be info, error or warn' in exc_info.value
+        assert 'Level has to be info, error or warn' in repr(exc_info.value)
 
     def test_add_msg_with_multiline_is_true(self):
         for level in ['info', 'warn', 'error']:
@@ -794,7 +802,7 @@ class TestResult(object):
         result.result['status'] = 'InvalidStatus'
         with pytest.raises(smoker_exceptions.ValidationError) as exc_info:
             result.validate()
-        assert expected in exc_info.value
+        assert expected in repr(exc_info.value)
 
     def test_validate_message_should_be_dict(self):
         result = server_plugins.Result()
@@ -803,7 +811,7 @@ class TestResult(object):
         with pytest.raises(smoker_exceptions.ValidationError) as exc_info:
             result.validate()
         expected = 'Result message has to be a dictionary or None, not str'
-        assert expected in exc_info.value
+        assert expected in repr(exc_info.value)
 
     def test_validate_level_message_should_be_list(self):
         for level in ['info', 'error', 'warn']:
@@ -814,7 +822,7 @@ class TestResult(object):
                 result.validate()
             expected = 'Can\'t validate message: Result message type %s has ' \
                        'to be a list, not str' % level
-            assert expected in exc_info.value
+            assert expected in repr(exc_info.value)
 
     def test_validate_level_message_output_should_be_string(self):
         for level in ['info', 'error', 'warn']:
@@ -825,7 +833,7 @@ class TestResult(object):
                 result.validate()
             expected = 'Can\'t validate message: Result message type %s has ' \
                        'to be a string, not list' % level
-            assert expected in exc_info.value
+            assert expected in repr(exc_info.value)
 
     def test_validate_component_result_should_be_dict(self):
         expected = 'Component result must be dictionary'
@@ -834,7 +842,7 @@ class TestResult(object):
         result.result['componentResults'] = list()
         with pytest.raises(smoker_exceptions.ValidationError) as exc_info:
             result.validate()
-        assert expected in exc_info.value
+        assert expected in repr(exc_info.value)
 
     def test_validate_component_result_should_have_message(self):
         component_results = {
@@ -848,7 +856,7 @@ class TestResult(object):
         result.result['componentResults'] = component_results
         with pytest.raises(smoker_exceptions.ValidationError) as exc_info:
             result.validate()
-        assert expected in exc_info.value
+        assert expected in repr(exc_info.value)
 
     def test_validate_component_result_should_have_status(self):
         component_results = {
@@ -866,7 +874,7 @@ class TestResult(object):
         result.result['componentResults'] = component_results
         with pytest.raises(smoker_exceptions.ValidationError) as exc_info:
             result.validate()
-        assert expected in exc_info.value
+        assert expected in repr(exc_info.value)
 
     def test_validate_action_result_should_be_dict(self):
         expected = 'Action result must be dictionary'
@@ -875,7 +883,7 @@ class TestResult(object):
         result.result['action'] = str()
         with pytest.raises(smoker_exceptions.ValidationError) as exc_info:
             result.validate()
-        assert expected in exc_info.value
+        assert expected in repr(exc_info.value)
 
     def test_validate_action_result_should_have_message(self):
         action_result = {
@@ -887,7 +895,7 @@ class TestResult(object):
         result.result['action'] = action_result
         with pytest.raises(smoker_exceptions.ValidationError) as exc_info:
             result.validate()
-        assert expected in exc_info.value
+        assert expected in repr(exc_info.value)
 
     def test_validate_action_result_should_have_status(self):
         action_result = {
@@ -903,7 +911,7 @@ class TestResult(object):
         result.result['action'] = action_result
         with pytest.raises(smoker_exceptions.ValidationError) as exc_info:
             result.validate()
-        assert expected in exc_info.value
+        assert expected in repr(exc_info.value)
 
     def test_set_result(self):
         result_to_validate = copy.deepcopy(self.result_to_validate)

@@ -4,8 +4,9 @@
 Module providing base http server for smokerd REST API
 """
 
+from builtins import range
 from flask import Flask, request, make_response
-from flask.ext.restful import Api, Resource, abort
+from flask_restful import Api, Resource, abort
 import json
 import logging
 import multiprocessing
@@ -50,7 +51,7 @@ def standardized_api_list(component):
     # Plugin object's structures
     results = dict(component)
     results[keyword] = []
-    for key, value in component[keyword].iteritems():
+    for key, value in component[keyword].items():
         value['name'] = key
         results[keyword].append({'componentResult': value})
 
@@ -180,7 +181,7 @@ class Plugins(Resource):
         """
         Print overview of all plugins
         """
-        return print_plugins(smokerd.pluginmgr.get_plugins().keys())
+        return print_plugins(list(smokerd.pluginmgr.get_plugins().keys()))
 
 
 class Plugin(Resource):
@@ -194,7 +195,7 @@ class Plugin(Resource):
         try:
             plugin = print_plugin(name)
         except exceptions.NoSuchPlugin as e:
-            abort(404, message=e.message)
+            abort(404, message=str(e))
         history = get_plugin_history(name)
         plugin['results'] = history
 
@@ -268,7 +269,7 @@ class Processes(Resource):
         try:
             id = smokerd.pluginmgr.add_process(plugins, filter)
         except Exception as e:
-            abort(500, message=e.message)
+            abort(500, message=str(e))
 
         return print_in_progress(id)
 

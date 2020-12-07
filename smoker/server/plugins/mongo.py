@@ -13,6 +13,7 @@ Parameters:
     ReplicaSet  - replica set to use (default text)
 """
 
+from builtins import str
 import logging
 
 from smoker.server.plugins import BasePlugin
@@ -47,7 +48,7 @@ class Plugin(BasePlugin):
 
         # Check components
         for item in checks:
-            for check, check_function in item.iteritems():
+            for check, check_function in item.items():
                 try:
                     res = check_function()
                     self.result.add_component(check, res['state'], **res['messages'])
@@ -222,7 +223,7 @@ class Plugin(BasePlugin):
         }
 
         for member in status['members']:
-            if member.has_key('errmsg'):
+            if 'errmsg' in member:
                 msg = 'Member %s is %s: %s' % (member['name'], member['stateStr'], member['errmsg'])
             else:
                 msg = 'Member %s is %s' % (member['name'], member['stateStr'])

@@ -15,14 +15,15 @@ So sorting or structuring testsuites/testcases is futile effort.
 Important is to properly set 'classname' and 'name' attributes for testcase
 elements.
 '''
+from __future__ import absolute_import
 
 from cgi import escape
 import collections
 import yaml
 
-import default_config
-import rows
-from xml_builder import XmlBuilder
+from . import default_config
+from . import rows
+from .xml_builder import XmlBuilder
 
 
 def plugins_to_xml(dict_data,
@@ -70,9 +71,9 @@ def plugins_to_xml(dict_data,
         """
         applied_args = {}
         if custom_dict:
-            for k, v in custom_dict.iteritems():
+            for k, v in custom_dict.items():
                 applied_args[k] = getattr(inst, v)
-        for k, v in kwargs.iteritems():
+        for k, v in kwargs.items():
             applied_args[k] = getattr(inst, v)
         return applied_args
 
@@ -89,23 +90,23 @@ def plugins_to_xml(dict_data,
                                         additional_fields=C[additional_fields])
 
     ts_data = {}
-    for res in results.iterkeys():
+    for res in results.keys():
         ts_data[res] = collections.defaultdict(list)
         ts_res = ts_data[res]
         for row in results[res]:
             ts_res[row.Node].append(row)
 
     junit_xml = XmlBuilder()
-    for template_name, ts in sorted(ts_data.iteritems()):
+    for template_name, ts in ts_data.items():
         with junit_xml.testsuites as html_tss:
             html_tss(name=template_name)
-            for _node, tcs in sorted(ts.iteritems()):
+            for _node, tcs in ts.items():
                 with html_tss.testsuite as html_ts:
                     first = tcs[0] if tcs else None
                     if first:
                         html_ts(custom_dict=_apply(first,
                                                   custom_dict=C[ts_attr]))
-                    for tc in sorted(tcs):
+                    for tc in tcs:
                         html_tc = html_ts.testcase(
                             custom_dict=_apply(tc, custom_dict=C[tc_attr]))
 

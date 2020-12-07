@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2015, GoodData(R) Corporation. All rights reserved
 
+from builtins import object
 import mock
 import os
 import pytest
@@ -30,7 +31,7 @@ class TestHost(object):
         assert host.url == 'http://%s:8086' % self.hostname
         assert not host.links
 
-    @mock.patch('urllib2.urlopen', rest_api_response)
+    @mock.patch('urllib.request.urlopen', rest_api_response)
     def test_load_about(self):
         # Mock: http://${hostname}:8089/  load_about
         host = smoker_client.Host('%s:8086' % self.hostname)
@@ -39,7 +40,7 @@ class TestHost(object):
         assert host.links == client_mock_result.links
         assert host.name == client_mock_result.about_response['about']['host']
 
-    @mock.patch('urllib2.urlopen', rest_api_response)
+    @mock.patch('urllib.request.urlopen', rest_api_response)
     def test_result_will_be_cleared_after_getting(self):
         # Mock: http://${hostname}:8089/  load_about
         host = smoker_client.Host('%s:8086' % self.hostname)
@@ -47,7 +48,7 @@ class TestHost(object):
         assert host.get_result() == client_mock_result.about_response
         assert not host.get_result()
 
-    @mock.patch('urllib2.urlopen', rest_api_response)
+    @mock.patch('urllib.request.urlopen', rest_api_response)
     def test_force_run(self):
         # Mock: http://${hostname}:8089/  load_about
         # Mock: http://${hostname}:8089/processes  open(resource='processes')
@@ -58,7 +59,7 @@ class TestHost(object):
         plugins = {'Uptime': dict()}
         assert host.force_run(plugins)['plugins']['items'][0] == expected
 
-    @mock.patch('urllib2.urlopen', rest_api_response)
+    @mock.patch('urllib.request.urlopen', rest_api_response)
     def test_force_run_with_invalid_plugin_name(self):
         # Mock: http://${hostname}:8089/  load_about
         # Mock: http://${hostname}:8089/processes  open(resource='processes')
@@ -68,7 +69,7 @@ class TestHost(object):
         assert host.force_run(plugins) is False
         assert host.get_result() == client_mock_result.about_response
 
-    @mock.patch('urllib2.urlopen', rest_api_response)
+    @mock.patch('urllib.request.urlopen', rest_api_response)
     def test_load_about_before_open_resource(self):
         # Mock: http://${hostname}:8089/  load_about
         # Mock: http://${hostname}:8089/plugins  open(resource='plugins')
@@ -77,7 +78,7 @@ class TestHost(object):
         host.load_about()
         assert host.open(resource='plugins')
 
-    @mock.patch('urllib2.urlopen', rest_api_response)
+    @mock.patch('urllib.request.urlopen', rest_api_response)
     def test_open_with_invalid_uri_and_resource(self):
         # Mock: http://${hostname}:8089/  load_about
         # Mock: http://${hostname}:8089/InvalidUri  open(uri='/InvalidUri')
@@ -90,7 +91,7 @@ class TestHost(object):
         assert not host.open(resource='InvalidResource')
         with pytest.raises(Exception) as exc_info:
             host.open()
-        assert expected_exc in exc_info.value
+        assert expected_exc in repr(exc_info.value)
 
 
 class TestClient(object):
@@ -98,20 +99,20 @@ class TestClient(object):
 
     hostname = socket.gethostname()
 
-    @mock.patch('urllib2.urlopen', rest_api_response)
+    @mock.patch('urllib.request.urlopen', rest_api_response)
     def test_create_client_instance(self):
         # Mock: http://${hostname}:8089/  load_about
         cli = smoker_client.Client(['%s:8086' % self.hostname])
         assert cli.hosts[0].load_about() == client_mock_result.about_response
 
-    @mock.patch('urllib2.urlopen', rest_api_response)
+    @mock.patch('urllib.request.urlopen', rest_api_response)
     def test_get_plugins_with_filter_is_none(self):
         cli = smoker_client.Client(['%s:8086' % self.hostname])
         with pytest.raises(TypeError) as exc_info:
             cli.get_plugins()
-        assert "'NoneType' object is not iterable" in exc_info.value
+        assert "'NoneType' object is not iterable" in repr(exc_info.value)
 
-    @mock.patch('urllib2.urlopen', rest_api_response)
+    @mock.patch('urllib.request.urlopen', rest_api_response)
     def test_get_plugins(self):
         # Mock: http://${hostname}:8089/  load_about
         # Mock: http://${hostname}:8089/plugins  open(resource='plugins')
@@ -131,7 +132,7 @@ class TestClient(object):
         assert 'Hostname' and 'Uptime' in result[self.hostname]['plugins']
         assert 'Uname' not in result[self.hostname]['plugins']
 
-    @mock.patch('urllib2.urlopen', rest_api_response)
+    @mock.patch('urllib.request.urlopen', rest_api_response)
     def test_open_with_invalid_uri_and_resource(self):
         # Mock: http://${hostname}:8089/  load_about
         cli = smoker_client.Client(['%s:8086' % self.hostname])
@@ -141,9 +142,9 @@ class TestClient(object):
         cli.open(resource='InvalidResource') == expected_response
         with pytest.raises(Exception) as exc_info:
             cli.open()
-        assert expected_exc in exc_info.value
+        assert expected_exc in repr(exc_info.value)
 
-    @mock.patch('urllib2.urlopen', rest_api_response)
+    @mock.patch('urllib.request.urlopen', rest_api_response)
     def test_force_run(self):
         # Mock: http://${hostname}:8089/  load_about
         # Mock: http://${hostname}:8089/processes  open(resource='processes')
@@ -161,7 +162,7 @@ class TestClient(object):
         assert result['Uptime']['forcedResult']['status'] == 'OK'
         assert result['Uptime']['links']['self'] == '/plugins/Uptime'
 
-    @mock.patch('urllib2.urlopen', rest_api_response)
+    @mock.patch('urllib.request.urlopen', rest_api_response)
     def test_force_run_with_WARN_result(self):
         # Mock: http://${hostname}:8089/  load_about
         # Mock: http://${hostname}:8089/processes  open(resource='processes')
@@ -182,7 +183,7 @@ class TestClient(object):
         assert result['Uptime']['links']['self'] == '/plugins/Uptime'
         assert result['Uname']['links']['self'] == '/plugins/Uname'
 
-    @mock.patch('urllib2.urlopen', rest_api_response)
+    @mock.patch('urllib.request.urlopen', rest_api_response)
     def test_force_run_with_ERROR_result(self):
         # Mock: http://${hostname}:8089/  load_about
         # Mock: http://${hostname}:8089/processes  open(resource='processes')
@@ -204,7 +205,7 @@ class TestClient(object):
         assert result['Uname']['links']['self'] == '/plugins/Uname'
         assert result['Hostname']['links']['self'] == '/plugins/Hostname'
 
-    @mock.patch('urllib2.urlopen', rest_api_response)
+    @mock.patch('urllib.request.urlopen', rest_api_response)
     def test_dump_tap_result(self):
         # Mock: http://${hostname}:8089/  load_about
         # Mock: http://${hostname}:8089/plugins  open(resource='plugins')
@@ -227,7 +228,7 @@ class TestClient(object):
         expected = '\n'.join(client_mock_result.tap_result_hostname_uname)
         assert smoker_cli.dump_tap(plugins) == expected
 
-    @mock.patch('urllib2.urlopen', rest_api_response)
+    @mock.patch('urllib.request.urlopen', rest_api_response)
     def test_plugins_to_xml_result(self):
         # Mock: http://${hostname}:8089/  load_about
         # Mock: http://${hostname}:8089/plugins  open(resource='plugins')
@@ -236,19 +237,23 @@ class TestClient(object):
 
         plugins = cli.get_plugins(filters=list())
         expected = '\n'.join(client_mock_result.xml_result_all_plugins)
-        assert smoker_cli.plugins_to_xml(plugins) == expected
+        result = smoker_cli.plugins_to_xml(plugins)
+        assert result == expected
 
         plugins = cli.get_plugins(filters=list(), exclude_plugins=['Hostname'])
         expected = '\n'.join(client_mock_result.xml_result_uptime_uname)
-        assert smoker_cli.plugins_to_xml(plugins) == expected
+        result = smoker_cli.plugins_to_xml(plugins)
+        assert result == expected
 
         plugins = cli.get_plugins(filters=list(), exclude_plugins=['Uname'])
         expected = '\n'.join(client_mock_result.xml_result_uptime_hostname)
-        assert smoker_cli.plugins_to_xml(plugins) == expected
+        result = smoker_cli.plugins_to_xml(plugins)
+        assert result == expected
 
         plugins = cli.get_plugins(filters=list(), exclude_plugins=['Uptime'])
         expected = '\n'.join(client_mock_result.xml_result_hostname_uname)
-        assert smoker_cli.plugins_to_xml(plugins) == expected
+        result = smoker_cli.plugins_to_xml(plugins)
+        assert result == expected
 
 
 class TestCleanUp(object):

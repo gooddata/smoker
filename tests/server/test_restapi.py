@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2015, GoodData(R) Corporation. All rights reserved
 
+from builtins import range
+from builtins import object
 import copy
 import datetime
 import os
@@ -118,7 +120,7 @@ class TestRestAPI(object):
     def test_print_plugin_with_invalid_plugin_name(self):
         with pytest.raises(smoker_exceptions.NoSuchPlugin) as exc_info:
             restserver.print_plugin('InvalidPluginName')
-        assert 'Plugin InvalidPluginName not found' in exc_info.value
+        assert 'Plugin InvalidPluginName not found' in repr(exc_info.value)
 
     def test_forced_print_plugin_without_forced_result(self):
         with pytest.raises(smoker_exceptions.InProgress):
@@ -140,7 +142,7 @@ class TestRestAPI(object):
         assert plugin_result['plugin']['forcedResult']['messages']['info']
 
     def test_print_plugins(self):
-        plugins_to_print = self.conf_plugins.keys()
+        plugins_to_print = list(self.conf_plugins.keys())
         plugins_result = restserver.print_plugins(plugins_to_print)
         assert plugins_result['plugins']
         assert len(plugins_result['plugins']['items']) == len(plugins_to_print)
@@ -153,7 +155,7 @@ class TestRestAPI(object):
             assert plugin_result['parameters']
 
     def test_forced_print_plugins_with_forced_result(self):
-        plugins_to_print = self.conf_plugins.keys()
+        plugins_to_print = list(self.conf_plugins.keys())
         for plugin in self.smokerd.pluginmgr.get_plugins().values():
             plugin.forced = True
             plugin.run()

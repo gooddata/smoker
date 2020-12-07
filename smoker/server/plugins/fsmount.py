@@ -12,6 +12,7 @@ Parameters:
     Mounts  - list of mounts to check (default try to check all)
 """
 
+from builtins import str
 import os
 import random
 import re
@@ -43,7 +44,7 @@ class Plugin(BasePlugin):
             self.result.add_warn('No mounts found')
             return self.result
 
-        for path, mount in mounts.iteritems():
+        for path, mount in mounts.items():
             try:
                 res = self.check_mount(path, mount)
                 self.result.add_component(path, res['state'], **res['messages'])
@@ -73,7 +74,7 @@ class Plugin(BasePlugin):
             result['state'] = test['state']
 
             # Append messages
-            for type, messages in test['messages'].iteritems():
+            for type, messages in test['messages'].items():
                 for msg in messages:
                     msg = 'Access: %s' % msg
                     result['messages'][type].append(msg)
@@ -92,7 +93,7 @@ class Plugin(BasePlugin):
                 result['state'] = 'WARN'
 
             # Append messages
-            for type, messages in test['messages'].iteritems():
+            for type, messages in test['messages'].items():
                 for msg in messages:
                     msg = 'Read/Write: %s' % msg
                     result['messages'][type].append(msg)

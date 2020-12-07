@@ -2,16 +2,23 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import logging
 lg = logging.getLogger('smoker')
 
 import threading
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import simplejson
 import time
 import datetime
+import sys
 
 from smoker.util.progressbar import ProgressBar, NonInteractiveError
+
+_PY3 =  sys.version_info[0] == 3
+
 
 class Client(object):
     """
@@ -85,7 +92,7 @@ class Client(object):
 
         pool = []
         # For each host in plugins result, force run of it's plugins
-        for hostname, host in plugins.iteritems():
+        for hostname, host in plugins.items():
             t = threading.Thread(name=hostname, target=host_map[hostname].force_run, args=(host['plugins'],))
             t.daemon = True
             t.start()
@@ -97,7 +104,7 @@ class Client(object):
             self.wait(pool)
 
         result = {}
-        for hostname in plugins.iterkeys():
+        for hostname in plugins.keys():
             result[hostname] = host_map[hostname].get_result()
 
         result = self._format_plugins(result)
@@ -123,7 +130,7 @@ class Client(object):
         :param exclude_plugins: list of plugin names to exclude
         """
         result = {}
-        for name, host in plugins.iteritems():
+        for name, host in plugins.items():
             # No plugins for host, skip it
             try:
                 host['plugins']['items']
@@ -290,7 +297,7 @@ class Host(object):
 
     _result  = None
 
-    def __init__(self, address, default_port):
+    def __init__(self, address, default_port=8086):
         """
         Initialize object
         """
@@ -335,16 +342,22 @@ class Host(object):
                 lg.error("Can't find resource %s" % resource)
                 return False
 
+        if data:
+            data = data.encode('utf-8')
+
         url = '%s%s' % (self.url, uri)
         lg.info("Host %s: requesting url %s" % (self.name, url))
         try:
-            fh = urllib2.urlopen(url, timeout=timeout, data=data)
+            fh = urllib.request.urlopen(url, timeout=timeout, data=data)
         except Exception as e:
             lg.error("Host %s: can't open resource %s: %s" % (self.name, url, e))
             return False
 
+        fh = fh.read()
+        if not _PY3:
+            fh = fh.decode('utf-8')
         try:
-            json = simplejson.load(fh)
+            json = simplejson.loads(fh)
         except Exception as e:
             lg.error("Host %s: can't load response as JSON: %s" % (self.name, e))
             return False
@@ -362,7 +375,7 @@ class Host(object):
             'pluginName2': {...},
         }
         """
-        plugins_list = plugins.keys()
+        plugins_list = list(plugins.keys())
         data = simplejson.dumps({
             'process' : {
                 'plugins' : plugins_list,
@@ -398,7 +411,7 @@ class Host(object):
                     retries -= 1
                     continue
 
-            if res.has_key('asyncTask'):
+            if 'asyncTask' in res:
                 uri = res['asyncTask']['link']['poll']
                 time.sleep(1)
             else:

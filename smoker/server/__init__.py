@@ -14,9 +14,9 @@ def redirect_standard_io(config):
     sys.stdout.flush()
     sys.stderr.flush()
 
-    si = file(config['stdin'], 'r')
-    so = file(config['stdout'], 'a+')
-    se = file(config['stderr'], 'a+', 0)
+    si = open(config['stdin'], 'r')
+    so = open(config['stdout'], 'a+')
+    se = open(config['stderr'], 'a+', 0)
 
     os.dup2(si.fileno(), sys.stdin.fileno())
     os.dup2(so.fileno(), sys.stdout.fileno())

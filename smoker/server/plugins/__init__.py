@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
+from builtins import str
+from past.builtins import basestring
+from builtins import object
 import datetime
 import gc
 import logging
@@ -82,7 +85,7 @@ class PluginManager(object):
             plugins_left_cnt = len(plugins_left)
             while plugins_left:
                 plugins_left = []
-                for name, plugin in self.plugins.iteritems():
+                for name, plugin in self.plugins.items():
                     if not plugin.current_run:
                         continue
                     if plugin.current_run.is_alive():
@@ -108,8 +111,8 @@ class PluginManager(object):
             lg.error("Required BasePlugin template is not configured!")
             raise BasePluginTemplateNotFound
 
-        for plugin, options in self.conf_plugins.iteritems():
-            if options.has_key('Enabled') and options['Enabled'] == False:
+        for plugin, options in self.conf_plugins.items():
+            if 'Enabled' in options and options['Enabled'] == False:
                 lg.info("Plugin %s is disabled, skipping.." % plugin)
                 continue
 
@@ -145,11 +148,11 @@ class PluginManager(object):
             template = {}
 
         # Plugin has template, load it's parent params
-        if options.has_key('Template'):
+        if 'Template' in options:
             template_custom = self.get_template(options['Template'])
             template = dict(template, **template_custom)
 
-        if options.has_key('Action'):
+        if 'Action' in options:
             options['Action'] = self.get_action(options['Action'])
 
         params = dict(template, **options)
@@ -190,11 +193,11 @@ class PluginManager(object):
 
         if filter:
             plugins = []
-            key = filter.keys()[0]
+            key = list(filter.keys())[0]
             value = filter[key]
 
-            for plugin in self.plugins.itervalues():
-                if plugin.params.has_key(key):
+            for plugin in self.plugins.values():
+                if key in plugin.params:
                     if plugin.params[key] == value:
                         plugins.append(plugin)
             return plugins
@@ -400,7 +403,7 @@ class Plugin(object):
         current time if now parameter is True
         """
         if time:
-            if isinstance(time, object) and type(time).__name__ == 'datetime':
+            if isinstance(time, datetime.datetime):
                 self.next_run = time
             else:
                 raise InvalidArgument(
@@ -457,6 +460,10 @@ class PluginWorker(multiprocessing.Process):
         self.params = params
         self.forced = forced
         self.result = None
+
+       #if self._Popen is not None:
+       #    from multiprocessing.popen_fork import Popen
+       #    self._Popen = Popen
 
         super(PluginWorker, self).__init__()
         self.daemon = True
@@ -518,7 +525,7 @@ class PluginWorker(multiprocessing.Process):
 
             if json:
                 # Output is JSON, check it has valid status or raise exception
-                if json.has_key('status') and json['status'] in [ 'OK', 'ERROR', 'WARN' ]:
+                if 'status' in json and json['status'] in [ 'OK', 'ERROR', 'WARN' ]:
                     try:
                         result.set_result(json, validate=True)
                     except ValidationError as e:
@@ -549,7 +556,7 @@ class PluginWorker(multiprocessing.Process):
             lg.debug("Plugin %s: stderr: %s" % (self.name, stderr.strip()))
 
         try:
-            parser = __import__(self.params['Parser'], globals(), locals(), ['Parser'], -1)
+            parser = __import__(self.params['Parser'], globals(), locals(), ['Parser'], 0)
         except ImportError as e:
             lg.error("Plugin %s: can't load parser %s: %s" % (self.name, self.params['Parser'], e))
             raise
@@ -577,7 +584,7 @@ class PluginWorker(multiprocessing.Process):
         """
         lg.debug("Plugin %s: running module %s" % (self.name, module))
         try:
-            plugin = __import__(module, globals(), locals(), ['Plugin'], -1)
+            plugin = __import__(module, globals(), locals(), ['Plugin'], 0)
         except ImportError as e:
             lg.error("Plugin %s: can't load module %s: %s" %
                      (self.name, module, e))
@@ -702,8 +709,8 @@ class PluginWorker(multiprocessing.Process):
         """
         if isinstance(tbe, dict):
             escaped = {}
-            for key, value in tbe.iteritems():
-                if type(value) in [int, types.NoneType, bool]:
+            for key, value in tbe.items():
+                if type(value) in [int, type(None), bool]:
                     escaped[key] = value
                 else:
                     try:
@@ -720,7 +727,7 @@ class PluginWorker(multiprocessing.Process):
         elif isinstance(tbe, list):
             escaped = []
             for value in tbe:
-                if type(value) in [int, types.NoneType, bool]:
+                if type(value) in [int, type(None), bool]:
                     escaped.append(value)
                 else:
                     try:
@@ -744,7 +751,11 @@ class PluginWorker(multiprocessing.Process):
 
     def close_unnecessary_sockets(self):
         """close unnecessary open sockets cloned on fork"""
-        open_sockets = filter(lambda x: type(x) == socket._socketobject, gc.get_objects())
+        open_sockets = list()
+        allowed = ['socket.socket', 'socket._socketobject']
+        for x in gc.get_objects():
+            if any(t for t in allowed if t in repr(type(x))):
+                open_sockets.append(x)
         for cur_socket in open_sockets:
             # close all TCP (SOCK_STREAM) sockets
             if cur_socket.type == socket.SOCK_STREAM:
@@ -808,7 +819,7 @@ class Result(object):
         Generate status from component results
         """
         status = default
-        for result in self.result['componentResults'].itervalues():
+        for result in self.result['componentResults'].values():
             if result['status'] == 'OK' and status not in ['WARN', 'ERROR']:
                 status = 'OK'
             elif result['status'] == 'WARN' and status != 'ERROR':
@@ -921,7 +932,7 @@ class Result(object):
         if not isinstance(result, dict):
             raise ValidationError("Component result must be dictionary")
 
-        for name, component in result.iteritems():
+        for name, component in result.items():
             try:
                 self._validate_msg(component['messages'])
             except KeyError:
@@ -1057,7 +1068,7 @@ class BasePlugin(object):
         You shouldn't use anything else than this function from inside plugins!
         """
         # Set default timeout
-        if not kwargs.has_key('timeout'):
+        if 'timeout' not in kwargs:
             kwargs['timeout'] = self.plugin.get_param('Timeout', default=120)
 
         return smoker.util.command.execute(command, **kwargs)

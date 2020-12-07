@@ -33,17 +33,18 @@
 #         return ['%s-%s' % (args.prefix, args.example)]
 
 
+from builtins import object
 class SpecificArgument(object):
     """
     Argparse argument to be added to the smoker CLI specific to this plugin
     """
-    def __init__(self, short, long, **kwargs):
-        if short and long:
-            self.args = [short, long]
-        elif short:
-            self.args = [short]
+    def __init__(self, shorter, longer, **kwargs):
+        if shorter and longer:
+            self.args = [shorter, longer]
+        elif shorter:
+            self.args = [shorter]
         else:
-            self.args = [long]
+            self.args = [longer]
         self.kwargs = kwargs
 
 
