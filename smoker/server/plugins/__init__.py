@@ -74,14 +74,14 @@ class PluginManager(object):
         self.stopping = True
 
         # Trigger stop of all plugins
-        for plugin in list(self.plugins.values()):
+        for plugin in self.plugins.values():
             if plugin.current_run:
                 plugin.current_run.stop()
                 plugin.current_run.terminate()
 
         # Wait until all plugins are stopped
         if blocking:
-            plugins_left = list(self.plugins.keys())
+            plugins_left = self.plugins.keys()
             plugins_left_cnt = len(plugins_left)
             while plugins_left:
                 plugins_left = []
@@ -270,7 +270,7 @@ class PluginManager(object):
         """
         Start run of plugins configured as such
         """
-        for plugin in list(self.plugins.values()):
+        for plugin in self.plugins.values():
             if not plugin.params['Interval']:
                 continue
             plugin.run()
@@ -280,7 +280,7 @@ class PluginManager(object):
         Join zombie workers of interval-triggered runs
         The results will be picked by REST server forked ends of the queues
         """
-        for plugin in list(self.plugins.values()):
+        for plugin in self.plugins.values():
             if not plugin.params['Interval']:
                 continue
             if plugin.current_run:
@@ -432,7 +432,7 @@ class Plugin(object):
             lg.debug("Plugin %s: got result from queue", self.name)
             self.result.append(result)
 
-            if 'forced' in list(result.keys()) and result['forced']:
+            if 'forced' in result.keys() and result['forced']:
                 self.forced_result = self.get_last_result()
                 self.forced = False
 

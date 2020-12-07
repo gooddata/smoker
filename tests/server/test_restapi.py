@@ -156,7 +156,7 @@ class TestRestAPI(object):
 
     def test_forced_print_plugins_with_forced_result(self):
         plugins_to_print = list(self.conf_plugins.keys())
-        for plugin in list(self.smokerd.pluginmgr.get_plugins().values()):
+        for plugin in self.smokerd.pluginmgr.get_plugins().values():
             plugin.forced = True
             plugin.run()
         time.sleep(0.5)

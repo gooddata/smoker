@@ -86,17 +86,17 @@ class TestPluginManager(object):
         plugins = iter(self.conf_plugins_with_template_is_false.items())
         for plugin, options in plugins:
             if 'Enabled' in options and not options['Enabled']:
-                assert plugin not in list(self.loaded_plugins.keys())
+                assert plugin not in self.loaded_plugins.keys()
 
     def test_enabled_plugins_should_be_loaded(self):
         for plugin, options in self.conf_plugins_to_load.items():
             if 'Enabled' in options and options['Enabled']:
-                assert plugin in list(self.loaded_plugins.keys())
+                assert plugin in self.loaded_plugins.keys()
 
     def test_plugins_without_enabled_option_should_be_loaded(self):
         for plugin, options in self.conf_plugins_to_load.items():
             if 'Enabled' not in options:
-                assert plugin in list(self.loaded_plugins.keys())
+                assert plugin in self.loaded_plugins.keys()
 
     def test_plugins_are_rightly_loaded(self):
         assert len(self.loaded_plugins) == len(self.conf_plugins_to_load)
@@ -269,7 +269,7 @@ class TestPluginManager(object):
         pluginmgr = server_plugins.PluginManager(**copy.deepcopy(self.config))
         time.sleep(5.5)
         pluginmgr.run_plugins_with_interval()
-        for plugin in list(pluginmgr.plugins.values()):
+        for plugin in pluginmgr.plugins.values():
             assert plugin.current_run
 
     def test_get_action(self):
@@ -534,7 +534,7 @@ class TestPluginWorker(object):
         worker = server_plugins.PluginWorker(**self.conf_worker)
         worker.run()
         procs = get_process_list()
-        assert expected in list(procs.values())
+        assert expected in procs.values()
 
     def test_drop_privileged_with_invalid_params(self):
         test_params = {
