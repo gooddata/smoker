@@ -39,6 +39,8 @@ def parse_issue(plugin_result):
     for component in plugin_result['lastResult']['componentResults']:
         if component['componentResult']['status'] != OK:
             out += "%s: %s; " % ( component['componentResult']['name'], component['componentResult']['status'])
+            out += "%s: %s: %s; " % ( component['componentResult']['name'], component['componentResult']['status'],
+                                     ', '.join(component['componentResult']['messages'][component['componentResult']['status'].lower()]))
     if len(out) > 1024:
         out = "smoke test: %s returns huge error output, see smoker logs for details" % plugin_result['name']
     return out
