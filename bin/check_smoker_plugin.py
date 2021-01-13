@@ -4,8 +4,8 @@
 
 """
 Check Smoker plugin and force it's run by option.
-Return Nagios-friendly result. We can't send much data so just send if it's alright or not or print first line of
-standard non-component messages if present.
+Return Nagios-friendly result. We can't send much data so just send if it's alright or not or print
+limited lenght details per each component if present.
 """
 
 import argparse
@@ -20,6 +20,7 @@ ERROR = "ERROR"
 WARN = "WARN"
 OK = "OK"
 
+OUTPUT_DETAILS_MAX_LEN = 256
 # Don't log into console, use only syslog
 smoker.logger.init(syslog=True, console=False)
 lg = logging.getLogger('check_smoker_plugin')
@@ -38,9 +39,9 @@ def parse_issue(plugin_result):
     out = "smoke test: %s " % plugin_result['name']
     for component in plugin_result['lastResult']['componentResults']:
         if component['componentResult']['status'] != OK:
-            out += "%s: %s; " % ( component['componentResult']['name'], component['componentResult']['status'])
-            out += "%s: %s: %s; " % ( component['componentResult']['name'], component['componentResult']['status'],
-                                     ', '.join(component['componentResult']['messages'][component['componentResult']['status'].lower()]))
+            details = ', '.join(component['componentResult']['messages'][component['componentResult']['status'].lower()])
+            truncated_details = (details[:OUTPUT_DETAILS_MAX_LEN] + '..') if len(details) > OUTPUT_DETAILS_MAX_LEN else details
+            out += "%s: %s: %s; " % ( component['componentResult']['name'], component['componentResult']['status'], truncated_details)
     if len(out) > 1024:
         out = "smoke test: %s returns huge error output, see smoker logs for details" % plugin_result['name']
     return out
