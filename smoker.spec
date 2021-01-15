@@ -10,7 +10,7 @@
 
 Name:		smoker
 Version:	2.2.2
-Release:	2%{?dist}
+Release:	3%{?dist}
 Epoch:		1
 Summary:	Smoke Testing Framework
 
@@ -23,7 +23,7 @@ BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:	noarch
 
 %if 0%{?el8}
-BuildRequires:  python3-setuptools python3-setproctitle python3-psutil
+BuildRequires:  python3-setuptools python3-setproctitle python3-psutil future
 %else
 BuildRequires:  python2-devel python2-setuptools python-setproctitle python2-psutil
 %endif
