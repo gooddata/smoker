@@ -23,9 +23,11 @@ BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:	noarch
 
 %if 0%{?el8}
-BuildRequires:  python3-setuptools python3-setproctitle python3-psutil python3-future
+BuildRequires:  python3-setuptools python3-psutil python3-setproctitle
+Requires:       python3-future
 %else
-BuildRequires:  python2-devel python2-setuptools python-setproctitle python2-psutil python2-future
+BuildRequires:  python2-devel python2-setuptools python2-psutil python-setproctitle
+Requires:       python2-future
 %endif
 Obsoletes:	gdc-smoker
 
