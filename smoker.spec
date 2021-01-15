@@ -9,8 +9,8 @@
 %endif
 
 Name:		smoker
-Version:	2.2.2
-Release:	3%{?dist}
+Version:	2.2.3
+Release:	4%{?dist}
 Epoch:		1
 Summary:	Smoke Testing Framework
 
@@ -23,9 +23,9 @@ BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:	noarch
 
 %if 0%{?el8}
-BuildRequires:  python3-setuptools python3-setproctitle python3-psutil future
+BuildRequires:  python3-setuptools python3-setproctitle python3-psutil python3-future
 %else
-BuildRequires:  python2-devel python2-setuptools python-setproctitle python2-psutil
+BuildRequires:  python2-devel python2-setuptools python-setproctitle python2-psutil python2-future
 %endif
 Obsoletes:	gdc-smoker
 
