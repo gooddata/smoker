@@ -17,7 +17,7 @@ elements.
 '''
 from __future__ import absolute_import
 
-from cgi import escape
+from html import escape
 import collections
 import yaml
 

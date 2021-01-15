@@ -269,7 +269,7 @@ class Client(object):
         while not done:
             done = True
             for t in pool:
-                if t.isAlive():
+                if t.is_alive():
                     done = False
             time.sleep(0.5)
 

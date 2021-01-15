@@ -13,7 +13,7 @@ Typical usage (with pool of threads):
         while progress.get_left():
             done = 0
             for t in pool:
-                if not t.isAlive():
+                if not t.is_alive():
                     done += 1
             progress.set_done(done)
 
@@ -177,7 +177,7 @@ class ProgressBar(threading.Thread, object):
             for t in pool:
                 assert isinstance(t, threading.Thread),\
                     "Object in pool must be instance of threading.Thread not %s" % type(t)
-                if not t.isAlive():
+                if not t.is_alive():
                     done += 1
             self.set_done(done)
             time.sleep(1)

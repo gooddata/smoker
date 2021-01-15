@@ -12,6 +12,7 @@ import os
 import psutil
 import pytest
 import re
+import sys
 from smoker.server import exceptions as smoker_exceptions
 import smoker.server.plugins as server_plugins
 import time
@@ -673,18 +674,24 @@ class TestPluginWorker(object):
     def test_escape(self):
         worker = server_plugins.PluginWorker(**self.conf_worker)
 
-        tbe_str = 'string \ '
+        tbe_str = r'string \ '
         assert worker.escape(tbe=tbe_str) == re.escape(tbe_str)
 
-        tbe_dict = {'dict': '\ "" '}
-        expected_dict = {'dict': '\\\\\\ \\"\\"\\ '}
+        tbe_dict = {'dict': r'\ "" '}
+        if sys.version_info >= (3, 7):
+            expected_dict = {'dict': '\\\\\\ ""\\ '}
+        else:
+            expected_dict = {'dict': '\\\\\\ \\"\\"\\ '}
         assert worker.escape(tbe=tbe_dict) == expected_dict
 
-        tbe_list = [1, '[Good]Data', '/\G']
-        expected_list = [1, '\\[Good\\]Data', '\\/\\\\G']
+        tbe_list = [1, '[Good]Data', r'/\G']
+        if sys.version_info >= (3, 7):
+            expected_list = [1, '\\[Good\\]Data', '/\\\\G']
+        else:
+            expected_list = [1, '\\[Good\\]Data', '\\/\\\\G']
         assert worker.escape(tbe=tbe_list) == expected_list
 
-        tbe_tuple = (1, '[Good]Data', '/\G')
+        tbe_tuple = (1, '[Good]Data', r'/\G')
         with pytest.raises(Exception) as exc_info:
             worker.escape(tbe=tbe_tuple)
         assert 'Unknown data type' in repr(exc_info.value)
