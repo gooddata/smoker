@@ -2,7 +2,7 @@
 
 Name:		smoker
 Version:	2.2.3
-Release:	5%{?dist}
+Release:	6%{?dist}
 Epoch:		1
 Summary:	Smoke Testing Framework
 
