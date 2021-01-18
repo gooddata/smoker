@@ -118,8 +118,8 @@ def main():
                 exit_method(results[status][0]['message'])
             else:
                 summary = ', '.join(["%s: %s" % (s, len(results[s])) for s, _ in status_methods_pairs if results[s]])
-                messages = ['\n'.join(["%s - %s - %s" % (s, item['name'], item['message']) for item in list])
-                            for s, list in results.items() if list]
+                messages = ['\n'.join(["%s - %s - %s" % (s, item['name'], item['message']) for item in lst])
+                            for s, lst in results.items() if lst]
                 exit_method("%s\n%s" % (summary, '\n'.join(messages)))
 
 
