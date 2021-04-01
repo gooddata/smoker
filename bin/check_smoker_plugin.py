@@ -87,7 +87,7 @@ def main():
     # Manage plugin result. We can't return much data to Nagios, so just say if it's alright or not
     results = dict((s, []) for s, _ in status_methods_pairs)
 
-    for plugin in list(plugins.values())[0]['plugins'].itervalues():
+    for plugin in list(plugins.values())[0]['plugins'].values():
         plugin_name = plugin['name']
         if not plugin['lastResult']:
             results[UNKNOWN].append({'name': plugin_name, 'message': "plugin has no last result"})
