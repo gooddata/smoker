@@ -4,4 +4,3 @@ psutil
 PyYAML
 simplejson
 setproctitle
-setuptools>=40.8.0
