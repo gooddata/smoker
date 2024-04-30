@@ -93,10 +93,10 @@ def get_ptree(process):
         process = psutil.Process(process)
 
     result = []
-    children = process.get_children()
+    children = process.children()
     if children:
         for child in children:
-            if child.get_children():
+            if child.children():
                 result.extend(get_ptree(child))
                 result.append(child)
             else:
