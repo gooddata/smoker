@@ -4,20 +4,19 @@
 Module providing base http server for smokerd REST API
 """
 
-from builtins import range
-from flask import Flask, request, make_response
-from flask_restful import Api, Resource, abort
 import json
 import logging
 import multiprocessing
-import setproctitle
 import signal
 import socket
 
-from smoker.server import exceptions
-from smoker.server import redirect_standard_io
+import setproctitle
+from flask import Flask, make_response, request
+from flask_restful import Api, Resource, abort
 
-lg = logging.getLogger('smokerd.apiserver')
+from smoker.server import exceptions, redirect_standard_io
+
+lg = logging.getLogger("smokerd.apiserver")
 
 # need to keep the daemon instance and common functions at module level since
 # there's no other way how to pass the to Flask_restful class methods
@@ -40,11 +39,13 @@ def standardized_api_list(component):
     """
     Convert result dict to list just to have standardized API
     """
-    keyword = 'componentResults'
+    keyword = "componentResults"
 
-    if (not isinstance(component, dict) or
-            keyword not in component or
-            not component[keyword]):
+    if (
+        not isinstance(component, dict)
+        or keyword not in component
+        or not component[keyword]
+    ):
         return component
 
     # Remove reference, because we don't want to modify
@@ -52,8 +53,8 @@ def standardized_api_list(component):
     results = dict(component)
     results[keyword] = []
     for key, value in component[keyword].items():
-        value['name'] = key
-        results[keyword].append({'componentResult': value})
+        value["name"] = key
+        results[keyword].append({"componentResult": value})
 
     return results
 
@@ -74,20 +75,20 @@ def print_plugin(name, forced=False):
 
     # Format plugin result
     plugin_result = {
-        'lastResult': standardized_api_list(result),
-        'links': {
-            'self': '/plugins/%s' % name,
+        "lastResult": standardized_api_list(result),
+        "links": {
+            "self": "/plugins/%s" % name,
         },
-        'name': name,
-        'nextRun': next_run_iso_format(plugin.next_run),
-        'parameters': plugin.params
+        "name": name,
+        "nextRun": next_run_iso_format(plugin.next_run),
+        "parameters": plugin.params,
     }
 
     if forced:
         if not plugin.forced_result:
             raise exceptions.InProgress
-        plugin_result['forcedResult'] = plugin.forced_result
-    return {'plugin': plugin_result}
+        plugin_result["forcedResult"] = plugin.forced_result
+    return {"plugin": plugin_result}
 
 
 def print_plugins(plugins, forced=False):
@@ -104,7 +105,7 @@ def print_plugins(plugins, forced=False):
     for plugin in plugins:
         plugins_result.append(print_plugin(plugin, forced))
 
-    return {'plugins': {'items': plugins_result}}
+    return {"plugins": {"items": plugins_result}}
 
 
 def get_plugin_history(name):
@@ -119,7 +120,7 @@ def get_plugin_history(name):
 
     for res in plugin.result:
         res = standardized_api_list(res)
-        results.append({'result': res})
+        results.append({"result": res})
 
     return results
 
@@ -131,21 +132,15 @@ def print_in_progress(id):
     :param id: process identifier
     :type id: int
     """
-    location = '/processes/%d' % id
-    data = {
-        'asyncTask': {
-            'link': {
-                'poll': location
-            }
-        }
-    }
+    location = "/processes/%d" % id
+    data = {"asyncTask": {"link": {"poll": location}}}
 
     # need to create response manually in orted to have custom status code
     response = make_response(json.dumps(data, indent=2))
-    response.status = 'Accepted'
+    response.status = "Accepted"
     response.status_code = 202
-    response.headers['Location'] = location
-    response.headers['content-type'] = 'application/json'
+    response.headers["Location"] = location
+    response.headers["content-type"] = "application/json"
     return response
 
 
@@ -153,25 +148,26 @@ class About(Resource):
     """
     Print the basic usage
     """
+
     def get(self):
         return {
-            'about': {
-                'host': socket.gethostname(),
-                'title': 'Smoker daemon API',
-                'links': [
+            "about": {
+                "host": socket.gethostname(),
+                "title": "Smoker daemon API",
+                "links": [
                     {
-                        'rel': 'plugins',
-                        'href': '/plugins',
-                        'methods': 'GET',
-                        'title': 'Show details about all plugins'
+                        "rel": "plugins",
+                        "href": "/plugins",
+                        "methods": "GET",
+                        "title": "Show details about all plugins",
                     },
                     {
-                        'rel': 'processes',
-                        'href': '/processes',
-                        'methods': 'GET, POST',
-                        'title': 'Force plugin run'
-                    }
-                ]
+                        "rel": "processes",
+                        "href": "/processes",
+                        "methods": "GET, POST",
+                        "title": "Force plugin run",
+                    },
+                ],
             }
         }
 
@@ -197,7 +193,7 @@ class Plugin(Resource):
         except exceptions.NoSuchPlugin as e:
             abort(404, message=str(e))
         history = get_plugin_history(name)
-        plugin['results'] = history
+        plugin["results"] = history
 
         return plugin
 
@@ -206,64 +202,55 @@ class Processes(Resource):
     """
     Create or get process
     """
+
     def get(self):
-        result = []
+        result: list[dict] = []
         processes = smokerd.pluginmgr.get_process_list()
         # we index processes from 1, having dummy on position 0
-        for id in range(1, len(processes)):
-            process = processes[id]
-            plugins = []
-            for plugin in process['plugins']:
-                plugins.append(plugin.name)
+        for id, process in enumerate(processes[1:], start=1):
+            plugins = [plugin.name for plugin in process["plugins"]]
 
-            result.append(
-                {
-                    'href': 'processes/%d' % id,
-                    'plugins': plugins
-                }
-            )
+            result.append(dict(href=f"processes/{id}", plugins=plugins))
         return result
 
     def post(self):
-        example = {}
-        example['example_input'] = {
-            'process': {
-                'plugins': '[STRING] | NULL',
-                'filter': '{STRING : STRING} | NULL'
-            }
+        example = {
+            "example_input": {
+                "process": {
+                    "plugins": "[STRING] | NULL",
+                    "filter": "{STRING : STRING} | NULL",
+                },
+            },
+            "note": "filter is optional key : value pair of plugin parameters to filter",
         }
-        example['note'] = (
-            'filter is optional key : value pair of plugin parameters '
-            'to filter')
 
         definition = request.get_json(force=True)
 
-        if (not definition or 'process' not in definition
-                or not definition['process']):
+        if not definition or "process" not in definition or not definition["process"]:
             abort(400, **example)
 
-        if 'plugins' in definition['process']:
-            plugins = definition['process']['plugins']
+        if "plugins" in definition["process"]:
+            plugins = definition["process"]["plugins"]
         else:
             plugins = None
 
-        if 'filter' in definition['process']:
-            filter = definition['process']['filter']
+        if "filter" in definition["process"]:
+            filter = definition["process"]["filter"]
         else:
             filter = None
 
         # If plugins and filter are empty, report bad request
         if not plugins and not filter:
-            example['message'] = 'Plugin names or filter have to be set'
+            example["message"] = "Plugin names or filter have to be set"
             abort(400, **example)
 
         # Validate input
         if plugins and not isinstance(plugins, list):
-            example['message'] = 'Element plugins have to be list'
+            example["message"] = "Element plugins have to be list"
             abort(400, **example)
 
         if filter and not isinstance(filter, dict):
-            example['message'] = 'Element filter have to be dictionary'
+            example["message"] = "Element filter have to be dictionary"
             abort(400, **example)
 
         try:
@@ -287,9 +274,9 @@ class Process(Resource):
                 raise IndexError
             process = smokerd.pluginmgr.get_process(int(id))
         except IndexError:
-            abort(404, message='Process id %s not found' % id)
+            abort(404, message="Process id %s not found" % id)
 
-        plugins = [plugin.name for plugin in process['plugins']]
+        plugins = [plugin.name for plugin in process["plugins"]]
 
         try:
             return print_plugins(plugins, forced=True)
@@ -306,18 +293,17 @@ class RestServer(multiprocessing.Process):
         global smokerd
         smokerd = smoker_daemon
 
-        self.host = smokerd.conf['bind_host']
-        self.port = smokerd.conf['bind_port']
+        self.host = smokerd.conf["bind_host"]
+        self.port = smokerd.conf["bind_port"]
         self.app = Flask(__name__)
-
         self.api = Api(self.app)
-        self.api.add_resource(About, '/')
-        self.api.add_resource(Plugins, '/plugins', '/plugins/')
-        self.api.add_resource(Plugin, '/plugins/<string:name>',
-                              '/plugins/<string:name>/')
-        self.api.add_resource(Processes, '/processes', '/processes/')
-        self.api.add_resource(Process, '/processes/<int:id>',
-                              '/processes/<int:id>/')
+        self.api.add_resource(About, "/")
+        self.api.add_resource(Plugins, "/plugins", "/plugins/")
+        self.api.add_resource(
+            Plugin, "/plugins/<string:name>", "/plugins/<string:name>/"
+        )
+        self.api.add_resource(Processes, "/processes", "/processes/")
+        self.api.add_resource(Process, "/processes/<int:id>", "/processes/<int:id>/")
 
         super(RestServer, self).__init__()
 
@@ -326,9 +312,9 @@ class RestServer(multiprocessing.Process):
         redirect_standard_io(smokerd.conf)
 
     def run(self):
-        setproctitle.setproctitle('smokerd rest api server')
+        setproctitle.setproctitle("smokerd rest api server")
 
-        if hasattr(signal, 'SIGHUP'):
+        if hasattr(signal, "SIGHUP"):
             signal.signal(signal.SIGHUP, self._reopen_logfiles)
 
         try:

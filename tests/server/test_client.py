@@ -2,18 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2015, GoodData(R) Corporation. All rights reserved
 
-from builtins import object
-import mock
 import os
-import pytest
 import shutil
+import socket
+
+import mock
+import pytest
+
 import smoker.client as smoker_client
 from smoker.client import cli as smoker_cli
-import socket
 from tests.server.smoker_test_resources import client_mock_result
-from tests.server.smoker_test_resources.client_mock_result\
-    import rest_api_response
-from tests.server.smoker_test_resources.client_mock_result import TMP_DIR
+from tests.server.smoker_test_resources.client_mock_result import (
+    TMP_DIR,
+    rest_api_response,
+)
 
 
 class TestHost(object):

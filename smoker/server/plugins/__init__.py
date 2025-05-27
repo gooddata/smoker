@@ -2,30 +2,44 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
-from builtins import str
-from past.builtins import basestring
-from builtins import object
 import datetime
 import gc
+import json
 import logging
 import multiprocessing
 import os
 import re
-import setproctitle
 import signal
-import simplejson
 import socket
 import time
-import types
+from builtins import object, str
 
-from smoker.server.exceptions import *
+import setproctitle
+from past.builtins import basestring
+
 import smoker.util.command
+from smoker.server.exceptions import (
+    ActionNotFound,
+    BasePluginTemplateNotFound,
+    InvalidArgument,
+    InvalidConfiguration,
+    NoActionsConfigured,
+    NoPluginsFound,
+    NoRunningPlugins,
+    NoSuchPlugin,
+    NoTemplatesConfigured,
+    PluginExecutionError,
+    PluginExecutionTimeout,
+    PluginMalformedOutput,
+    TemplateNotFound,
+    ValidationError,
+)
 
-lg = logging.getLogger('smokerd.pluginmanager')
+lg = logging.getLogger("smokerd.pluginmanager")
 
 
 def alarm_handler(signum, frame):
-    lg.info('Plugin timeout exceeded')
+    lg.info("Plugin timeout exceeded")
     raise PluginExecutionTimeout
 
 
@@ -35,8 +49,9 @@ class PluginManager(object):
     access to plugins
     """
 
-    def __init__(self, plugins=None, actions=None, templates=None,
-                 semaphore_count=None):
+    def __init__(
+        self, plugins=None, actions=None, templates=None, semaphore_count=None
+    ):
         """
         PluginManager constructor
          * load plugins/templates/actions configuration
@@ -46,12 +61,11 @@ class PluginManager(object):
         self.conf_actions = actions
         self.conf_templates = templates
 
-        self.plugins = {}
+        self.plugins: dict[str, Plugin] = {}
 
-        self.processes = []
         # We don't want to have process ID 0 (first index)
-        # so fill it by None
-        self.processes.append(None)
+        # so fill it by dummy process
+        self.processes = [{"plugins": []}]
 
         self.stopping = False
 
@@ -59,8 +73,10 @@ class PluginManager(object):
         semaphore = None
         # Don't limit plugin concurency unless requested
         if semaphore_count:
-            lg.info("Plugins will run approximately at %s parallel processes",
-                    semaphore_count)
+            lg.info(
+                "Plugins will run approximately at %s parallel processes",
+                semaphore_count,
+            )
             semaphore = multiprocessing.Semaphore(semaphore_count)
 
         # Load Plugin objects
@@ -95,7 +111,10 @@ class PluginManager(object):
                 if plugins_left:
                     # Print info only if number of left plugins changed
                     if len(plugins_left) != plugins_left_cnt:
-                        lg.info("Waiting for %s plugins to shutdown: %s" % (len(plugins_left), ','.join(plugins_left)))
+                        lg.info(
+                            "Waiting for %s plugins to shutdown: %s"
+                            % (len(plugins_left), ",".join(plugins_left))
+                        )
                     plugins_left_cnt = len(plugins_left)
                     time.sleep(0.5)
 
@@ -106,23 +125,29 @@ class PluginManager(object):
         # Check if BasePlugin template is present
         # or raise exception
         try:
-            self.get_template('BasePlugin')
+            self.get_template("BasePlugin")
         except (TemplateNotFound, NoTemplatesConfigured):
             lg.error("Required BasePlugin template is not configured!")
             raise BasePluginTemplateNotFound
 
         for plugin, options in self.conf_plugins.items():
-            if 'Enabled' in options and options['Enabled'] == False:
+            if "Enabled" in options and options["Enabled"] is False:
                 lg.info("Plugin %s is disabled, skipping.." % plugin)
                 continue
 
             try:
                 self.plugins[plugin] = self.load_plugin(plugin, options)
             except TemplateNotFound:
-                lg.error("Can't find configured template %s for plugin %s, plugin not loaded" % (options['Template'], plugin))
+                lg.error(
+                    "Can't find configured template %s for plugin %s, plugin not loaded"
+                    % (options["Template"], plugin)
+                )
                 continue
             except NoTemplatesConfigured:
-                lg.error("There are no templates configured, template %s is required by plugin %s, plugin not loaded" % (options['Template'], plugin))
+                lg.error(
+                    "There are no templates configured, template %s is required by plugin %s, plugin not loaded"
+                    % (options["Template"], plugin)
+                )
                 continue
             except AssertionError as e:
                 lg.error("Plugin %s not loaded: AssertionError, %s" % (plugin, e))
@@ -143,17 +168,17 @@ class PluginManager(object):
         """
         # Load BasePlugin template first
         try:
-            template = self.get_template('BasePlugin')
-        except:
+            template = self.get_template("BasePlugin")
+        except TemplateNotFound:
             template = {}
 
         # Plugin has template, load it's parent params
-        if 'Template' in options:
-            template_custom = self.get_template(options['Template'])
+        if "Template" in options:
+            template_custom = self.get_template(options["Template"])
             template = dict(template, **template_custom)
 
-        if 'Action' in options:
-            options['Action'] = self.get_action(options['Action'])
+        if "Action" in options:
+            options["Action"] = self.get_action(options["Action"])
 
         params = dict(template, **options)
         return Plugin(plugin, params)
@@ -221,8 +246,7 @@ class PluginManager(object):
 
         # Add plugins by name
         if plugins:
-            for plugin in plugins:
-                plugins_list.append(self.get_plugin(plugin))
+            plugins_list = [self.get_plugin(plugin) for plugin in plugins]
 
         # Add plugins by filter
         if filter:
@@ -233,18 +257,21 @@ class PluginManager(object):
             raise NoPluginsFound
 
         process = {
-            'plugins' : plugins_list,
+            "plugins": plugins_list,
         }
 
         plugins_name = []
         for p in plugins_list:
             plugins_name.append(p.name)
 
-        lg.info("Forcing run of %d plugins: %s" % (len(plugins_list), ', '.join(plugins_name)))
+        lg.info(
+            "Forcing run of %d plugins: %s"
+            % (len(plugins_list), ", ".join(plugins_name))
+        )
 
         # Add process into the list
         self.processes.append(process)
-        id = len(self.processes)-1
+        id = len(self.processes) - 1
 
         # Force run for each plugin and clear forced_result
         for plugin in plugins_list:
@@ -271,7 +298,7 @@ class PluginManager(object):
         Start run of plugins configured as such
         """
         for plugin in self.plugins.values():
-            if not plugin.params['Interval']:
+            if not plugin.params["Interval"]:
                 continue
             plugin.run()
 
@@ -281,7 +308,7 @@ class PluginManager(object):
         The results will be picked by REST server forked ends of the queues
         """
         for plugin in self.plugins.values():
-            if not plugin.params['Interval']:
+            if not plugin.params["Interval"]:
                 continue
             if plugin.current_run:
                 plugin.current_run.join()
@@ -292,21 +319,22 @@ class Plugin(object):
     """
     Object that represents single plugin
     """
+
     name = None
     params = {}
     current_run = None
 
     params_default = {
-        'Command': None,
-        'Module': None,
-        'Parser': None,
-        'Interval': 0,
-        'Timeout': 1800,
-        'History': 10,
-        'uid': 'default',
-        'gid': 'default',
-        'Template': None,
-        'Action': None,
+        "Command": None,
+        "Module": None,
+        "Parser": None,
+        "Interval": 0,
+        "Timeout": 1800,
+        "History": 10,
+        "uid": "default",
+        "gid": "default",
+        "Template": None,
+        "Action": None,
     }
 
     def __init__(self, name, params):
@@ -328,13 +356,13 @@ class Plugin(object):
 
         # Set Action properly to have all
         # required default parameters
-        if self.params['Action']:
+        if self.params["Action"]:
             action_default = {
-                'Command' : None,
-                'Module'  : None,
-                'Timeout' : 60,
+                "Command": None,
+                "Module": None,
+                "Timeout": 60,
             }
-            self.params['Action'] = dict(action_default, **params['Action'])
+            self.params["Action"] = dict(action_default, **params["Action"])
 
         # create the instances of the Queue and force flag
         self.queue = multiprocessing.Queue()
@@ -350,7 +378,7 @@ class Plugin(object):
         self.validate()
 
         # Schedule first plugin run
-        if self.params['Interval']:
+        if self.params["Interval"]:
             self.schedule_run()
 
     def validate(self):
@@ -359,19 +387,21 @@ class Plugin(object):
         Raise InvalidConfiguration exception if invalid
         """
         # Timeout can't be 0 or less
-        if self.params['Timeout'] <= 0:
+        if self.params["Timeout"] <= 0:
             raise InvalidConfiguration("Timeout parameter can't be 0")
 
         # Command or Module have to be set
-        if not self.params['Command'] and not self.params['Module']:
+        if not self.params["Command"] and not self.params["Module"]:
             raise InvalidConfiguration("Command or Module parameter has to be set")
 
         # Command and Module params can't be together
-        if self.params['Command'] and self.params['Module']:
-            raise InvalidConfiguration("Command and Module parameters cannot be set together")
+        if self.params["Command"] and self.params["Module"]:
+            raise InvalidConfiguration(
+                "Command and Module parameters cannot be set together"
+            )
 
         # Parser can't be set without command
-        if not self.params['Command'] and self.params['Parser']:
+        if not self.params["Command"] and self.params["Parser"]:
             raise InvalidConfiguration("Parser can be used only with Command parameter")
 
     def run(self):
@@ -386,13 +416,13 @@ class Plugin(object):
 
         # Plugin run when forced
         if self.forced:
-            self.current_run = PluginWorker(self.name, self.queue, self.params,
-                                            self.forced)
+            self.current_run = PluginWorker(
+                self.name, self.queue, self.params, self.forced
+            )
             self.current_run.start()
-        elif self.params['Interval']:
+        elif self.params["Interval"]:
             if datetime.datetime.now() >= self.next_run:
-                self.current_run = PluginWorker(self.name, self.queue,
-                                                self.params)
+                self.current_run = PluginWorker(self.name, self.queue, self.params)
                 self.current_run.start()
                 self.schedule_run()
 
@@ -407,13 +437,14 @@ class Plugin(object):
                 self.next_run = time
             else:
                 raise InvalidArgument(
-                    'Parameter time has to be an instance of datetime object')
+                    "Parameter time has to be an instance of datetime object"
+                )
         elif now:
             self.next_run = datetime.datetime.now()
-        elif self.params['Interval']:
-            self.next_run = (
-                datetime.datetime.now() +
-                datetime.timedelta(seconds=self.params['Interval']))
+        elif self.params["Interval"]:
+            self.next_run = datetime.datetime.now() + datetime.timedelta(
+                seconds=self.params["Interval"]
+            )
 
     def collect_new_result(self):
         if self.queue.empty():  # nothing to collect
@@ -422,8 +453,11 @@ class Plugin(object):
                 return
 
             # results should be available, but are not
-            self.result.append(self.current_run.error_result(
-                "No run of plugin %s is found alive" % self.name))
+            self.result.append(
+                self.current_run.error_result(
+                    "No run of plugin %s is found alive" % self.name
+                )
+            )
             self.forced_result = self.get_last_result()
             self.forced = False
 
@@ -432,11 +466,11 @@ class Plugin(object):
             lg.debug("Plugin %s: got result from queue", self.name)
             self.result.append(result)
 
-            if 'forced' in result.keys() and result['forced']:
+            if "forced" in result.keys() and result["forced"]:
                 self.forced_result = self.get_last_result()
                 self.forced = False
 
-            if len(self.result) > self.params['History']:
+            if len(self.result) > self.params["History"]:
                 self.result.pop(0)
 
         if self.current_run:  # forced, not externally fed to the queue
@@ -461,15 +495,15 @@ class PluginWorker(multiprocessing.Process):
         self.forced = forced
         self.result = None
 
-       #if self._Popen is not None:
-       #    from multiprocessing.popen_fork import Popen
-       #    self._Popen = Popen
+        # if self._Popen is not None:
+        #    from multiprocessing.popen_fork import Popen
+        #    self._Popen = Popen
 
         super(PluginWorker, self).__init__()
         self.daemon = True
 
     def run(self):
-        setproctitle.setproctitle('smokerd plugin %s' % self.plugin_name)
+        setproctitle.setproctitle("smokerd plugin %s" % self.plugin_name)
 
         self.close_unnecessary_sockets()
         self.drop_privileged()
@@ -492,54 +526,60 @@ class PluginWorker(multiprocessing.Process):
 
         try:
             stdout, stderr, returncode = smoker.util.command.execute(
-                command, timeout=timeout)
+                command, timeout=timeout
+            )
         except smoker.util.command.ExecutionTimeout as e:
             raise PluginExecutionTimeout(e)
         except Exception as e:
             lg.exception(e)
-            raise PluginExecutionError(
-                "Can't execute command %s: %s" % (command, e))
+            raise PluginExecutionError("Can't execute command %s: %s" % (command, e))
 
         if returncode:
-            status = 'ERROR'
+            status = "ERROR"
         else:
-            status = 'OK'
-
+            status = "OK"
+        lg.debug(f"RMO: {stdout=}, {stderr=}, {returncode=}")
         # Run parser or parse output from stdin
-        if self.params['Parser']:
+        if self.params["Parser"]:
             try:
                 result = self.run_parser(stdout, stderr)
             except Exception as e:
                 # Error result
-                result.set_status('ERROR')
-                result.add_error(re.sub('^\n', '', stderr.strip()))
-                result.add_error('Parser run failed: %s' % e)
-                result.add_info(re.sub('^\n', '', stdout.strip()))
+                result.set_status("ERROR")
+                result.add_error(re.sub("^\n", "", stderr.strip()))
+                result.add_error("Parser run failed: %s" % e)
+                result.add_info(re.sub("^\n", "", stdout.strip()))
         else:
             # Try to parse JSON output
-            json = None
+            json_data = None
             try:
-                json = simplejson.loads(stdout)
-            except:
+                json_data = json.loads(stdout)
+            except Exception:
                 pass
 
-            if json:
+            if json_data:
                 # Output is JSON, check it has valid status or raise exception
-                if 'status' in json and json['status'] in [ 'OK', 'ERROR', 'WARN' ]:
+                if "status" in json_data and json_data["status"] in [
+                    "OK",
+                    "ERROR",
+                    "WARN",
+                ]:
                     try:
-                        result.set_result(json, validate=True)
+                        result.set_result(json_data, validate=True)
                     except ValidationError as e:
                         raise PluginMalformedOutput("Invalid JSON structure: %s" % e)
                 else:
-                    raise PluginMalformedOutput("Missing status in JSON output: %s" % json)
+                    raise PluginMalformedOutput(
+                        "Missing status in JSON output: %s" % json_data
+                    )
             else:
                 # Output is not JSON, use stdout/stderr and return value
                 lg.debug("Plugin %s: using non-JSON output" % self.name)
                 result.set_status(status)
                 if stderr:
-                    result.add_error(re.sub('^\n', '', stderr.strip()))
+                    result.add_error(re.sub("^\n", "", stderr.strip()))
                 if stdout:
-                    result.add_info(re.sub('^\n', '', stdout.strip()))
+                    result.add_info(re.sub("^\n", "", stdout.strip()))
 
         return result
 
@@ -548,7 +588,7 @@ class PluginWorker(multiprocessing.Process):
         Run parser on given stdout/stderr
         Raise exceptions if anything happen
         """
-        lg.debug("Plugin %s: running parser %s" % (self.name, self.params['Parser']))
+        lg.debug("Plugin %s: running parser %s" % (self.name, self.params["Parser"]))
 
         if stdout:
             lg.debug("Plugin %s: stdout: %s" % (self.name, stdout.strip()))
@@ -556,9 +596,14 @@ class PluginWorker(multiprocessing.Process):
             lg.debug("Plugin %s: stderr: %s" % (self.name, stderr.strip()))
 
         try:
-            parser = __import__(self.params['Parser'], globals(), locals(), ['Parser'], 0)
+            parser = __import__(
+                self.params["Parser"], globals(), locals(), ["Parser"], 0
+            )
         except ImportError as e:
-            lg.error("Plugin %s: can't load parser %s: %s" % (self.name, self.params['Parser'], e))
+            lg.error(
+                "Plugin %s: can't load parser %s: %s"
+                % (self.name, self.params["Parser"], e)
+            )
             raise
 
         try:
@@ -584,33 +629,31 @@ class PluginWorker(multiprocessing.Process):
         """
         lg.debug("Plugin %s: running module %s" % (self.name, module))
         try:
-            plugin = __import__(module, globals(), locals(), ['Plugin'], 0)
+            plugin = __import__(module, globals(), locals(), ["Plugin"], 0)
         except ImportError as e:
-            lg.error("Plugin %s: can't load module %s: %s" %
-                     (self.name, module, e))
+            lg.error("Plugin %s: can't load module %s: %s" % (self.name, module, e))
             raise
 
         try:
             plugin = plugin.Plugin(self, **kwargs)
         except Exception as e:
-            lg.error("Plugin %s: can't initialize plugin module: %s" %
-                     (self.name, e))
+            lg.error("Plugin %s: can't initialize plugin module: %s" % (self.name, e))
             lg.exception(e)
             raise
 
         signal.signal(signal.SIGALRM, alarm_handler)
-        if 'timeout' not in kwargs:
-            kwargs['timeout'] = self.get_param('Timeout', default=120)
+        if "timeout" not in kwargs:
+            kwargs["timeout"] = self.get_param("Timeout", default=120)
 
         try:
-            signal.alarm(kwargs['timeout'])
+            signal.alarm(kwargs["timeout"])
             result = plugin.run()
             if not result:
                 result = plugin.result
         except PluginExecutionTimeout:
             result = self.error_result(
-                'Plugin execution exceeded timeout %d seconds' %
-                kwargs['timeout'])
+                "Plugin execution exceeded timeout %d seconds" % kwargs["timeout"]
+            )
         except Exception as e:
             lg.error("Plugin %s: module execution failed: %s" % (self.name, e))
             lg.exception(e)
@@ -628,56 +671,58 @@ class PluginWorker(multiprocessing.Process):
         :type force: bool
         """
         # External command will be executed
-        if self.params['Command']:
-            command = self.params['Command'] % self.escape(dict(self.params))
+        if self.params["Command"]:
+            command = self.params["Command"] % self.escape(dict(self.params))
             # Execute external command to get result
             try:
-                result = self.run_command(command, self.params['Timeout'])
+                result = self.run_command(command, self.params["Timeout"])
             except Exception as e:
                 lg.error("Plugin %s: %s" % (self.name, e))
                 result = self.error_result(e)
         # Python module will be executed
-        elif self.params['Module']:
+        elif self.params["Module"]:
             try:
-                result = self.run_module(self.params['Module'])
+                result = self.run_module(self.params["Module"])
             except Exception as e:
                 lg.error("Plugin %s: %s" % (self.name, e))
-                result = self.error_result(
-                    re.sub('^\n', '', ('%s' % e).strip()))
+                result = self.error_result(re.sub("^\n", "", ("%s" % e).strip()))
         # No module or command to run
         else:
             lg.error("Plugin %s: no Command or Module to execute!" % self.name)
-            result = self.error_result('No Command or Module to execute!')
+            result = self.error_result("No Command or Module to execute!")
 
         # Run action on result
-        if self.params['Action']:
+        if self.params["Action"]:
             lg.debug("Plugin %s: executing action" % self.name)
             # Execute external command
-            if self.params['Action']['Command']:
+            if self.params["Action"]["Command"]:
                 # Add parameters to command with format
                 params = dict(self.params, **result.result)
                 params = self.escape(params)
 
                 try:
                     action = self.run_command(
-                        self.params['Action']['Command'] %
-                        params, timeout=self.params['Action']['Timeout'])
+                        self.params["Action"]["Command"] % params,
+                        timeout=self.params["Action"]["Timeout"],
+                    )
                 except Exception as e:
                     lg.error("Plugin %s: %s" % (self.name, e))
                     action = self.error_result(e)
             # Execute Python module
-            elif self.params['Action']['Module']:
+            elif self.params["Action"]["Module"]:
                 try:
                     action = self.run_module(
-                        self.params['Action']['Module'], result=result)
+                        self.params["Action"]["Module"], result=result
+                    )
                 except Exception as e:
                     lg.error("Plugin %s: %s" % (self.name, e))
                     action = self.error_result(e)
             # No command or module to execute
             else:
-                lg.error("Plugin %s: no Action Command or Module to execute!" %
-                         self.name)
-                action = self.error_result('No Command or Module to execute!')
+                lg.error(
+                    "Plugin %s: no Action Command or Module to execute!" % self.name
+                )
+                action = self.error_result("No Command or Module to execute!")
             # Add action result to plugin result
             result.set_action(action)
 
@@ -687,7 +732,7 @@ class PluginWorker(multiprocessing.Process):
             self.result = result.get_result()
         except ValidationError as e:
             lg.error("Plugin %s: ValidationError: %s" % (self.name, e))
-            result = self.error_result('ValidationError: %s' % e)
+            result = self.error_result("ValidationError: %s" % e)
             result.set_forced(force)
             self.result = result.get_result()
 
@@ -696,7 +741,7 @@ class PluginWorker(multiprocessing.Process):
 
     def error_result(self, message):
         result = Result()
-        result.set_status('ERROR')
+        result.set_status("ERROR")
         result.add_error(message)
         return result
 
@@ -715,12 +760,12 @@ class PluginWorker(multiprocessing.Process):
                 else:
                     try:
                         escaped[key] = re.escape(value)
-                    except:
+                    except Exception:
                         escaped[key] = value
         elif isinstance(tbe, basestring):
             try:
                 escaped = re.escape(tbe)
-            except:
+            except Exception:
                 escaped = tbe
         elif isinstance(tbe, int) or isinstance(tbe, bool):
             escaped = tbe
@@ -732,7 +777,7 @@ class PluginWorker(multiprocessing.Process):
                 else:
                     try:
                         escaped.append(re.escape(value))
-                    except:
+                    except Exception:
                         escaped.append(value)
         else:
             raise Exception("Unknown data type")
@@ -752,7 +797,7 @@ class PluginWorker(multiprocessing.Process):
     def close_unnecessary_sockets(self):
         """close unnecessary open sockets cloned on fork"""
         open_sockets = list()
-        allowed = ['socket.socket', 'socket._socketobject']
+        allowed = ["socket.socket", "socket._socketobject"]
         for x in gc.get_objects():
             if any(t for t in allowed if t in repr(type(x))):
                 open_sockets.append(x)
@@ -762,21 +807,26 @@ class PluginWorker(multiprocessing.Process):
                 cur_socket.close()
 
     def drop_privileged(self):
-        if (self.params['uid'] == 'default' and
-                self.params['gid'] == 'default'):
+        if self.params["uid"] == "default" and self.params["gid"] == "default":
             return
-        lg.debug("Plugin %s: dropping privileges to %s/%s"
-                 % (self.name, self.params['uid'], self.params['gid']))
+        lg.debug(
+            "Plugin %s: dropping privileges to %s/%s"
+            % (self.name, self.params["uid"], self.params["gid"])
+        )
         try:
-            os.setegid(self.params['gid'])
-            os.seteuid(self.params['uid'])
+            os.setegid(self.params["gid"])
+            os.seteuid(self.params["uid"])
         except TypeError as e:
-            lg.error("Plugin %s: config parameters uid/gid have to be "
-                     "integers: %s" % (self.name, e))
+            lg.error(
+                "Plugin %s: config parameters uid/gid have to be "
+                "integers: %s" % (self.name, e)
+            )
             raise
         except OSError as e:
-            lg.error("Plugin %s: can't switch effective UID/GID to %s/%s: %s"
-                     % (self.name, self.params['uid'], self.params['gid'], e))
+            lg.error(
+                "Plugin %s: can't switch effective UID/GID to %s/%s: %s"
+                % (self.name, self.params["uid"], self.params["gid"], e)
+            )
             raise
 
 
@@ -784,6 +834,7 @@ class Result(object):
     """
     Object that represents plugin result
     """
+
     validated = False
 
     def __init__(self):
@@ -791,12 +842,12 @@ class Result(object):
         Default result values
         """
         self.result = {
-            'status': None,
-            'messages': None,
-            'lastRun': datetime.datetime.now().isoformat(),
-            'componentResults': None,
-            'action': None,
-            'forced': False
+            "status": None,
+            "messages": None,
+            "lastRun": datetime.datetime.now().isoformat(),
+            "componentResults": None,
+            "action": None,
+            "forced": False,
         }
 
     def set_status(self, status=None):
@@ -805,49 +856,51 @@ class Result(object):
         If status is empty, generate it from componentResults
         """
         if status is None:
-            if not self.result['componentResults']:
-                raise Exception("Can't generate overall status without component results")
+            if not self.result["componentResults"]:
+                raise Exception(
+                    "Can't generate overall status without component results"
+                )
             status = self._gen_component_status()
 
-        if status not in ['OK', 'ERROR', 'WARN']:
+        if status not in ["OK", "ERROR", "WARN"]:
             raise InvalidArgument("Status has to be OK, ERROR or WARN")
 
-        self.result['status'] = status
+        self.result["status"] = status
 
-    def _gen_component_status(self, default='OK'):
+    def _gen_component_status(self, default="OK"):
         """
         Generate status from component results
         """
         status = default
-        for result in self.result['componentResults'].values():
-            if result['status'] == 'OK' and status not in ['WARN', 'ERROR']:
-                status = 'OK'
-            elif result['status'] == 'WARN' and status != 'ERROR':
-                status = 'WARN'
-            elif result['status'] == 'ERROR':
-                status = 'ERROR'
+        for result in self.result["componentResults"].values():
+            if result["status"] == "OK" and status not in ["WARN", "ERROR"]:
+                status = "OK"
+            elif result["status"] == "WARN" and status != "ERROR":
+                status = "WARN"
+            elif result["status"] == "ERROR":
+                status = "ERROR"
         return status
 
     def set_forced(self, forced=True):
-        self.result['forced'] = forced
+        self.result["forced"] = forced
 
     def add_info(self, msg):
         """
         Add info messge
         """
-        self.add_msg('info', msg)
+        self.add_msg("info", msg)
 
     def add_error(self, msg):
         """
         Add error messge
         """
-        self.add_msg('error', msg)
+        self.add_msg("error", msg)
 
     def add_warn(self, msg):
         """
         Add warn messge
         """
-        self.add_msg('warn', msg)
+        self.add_msg("warn", msg)
 
     def add_msg(self, level, msg, multiline=False):
         """
@@ -858,15 +911,15 @@ class Result(object):
             multiple messages
         """
         # Create messages structure if it doesn't exists
-        if not self.result['messages']:
-            self.result['messages'] = {
-                'info' : [],
-                'error': [],
-                'warn' : [],
+        if not self.result["messages"]:
+            self.result["messages"] = {
+                "info": [],
+                "error": [],
+                "warn": [],
             }
 
         if not multiline:
-            messages = str(msg).split('\n')
+            messages = str(msg).split("\n")
         else:
             messages = [str(msg)]
 
@@ -876,7 +929,7 @@ class Result(object):
                 continue
 
             try:
-                self.result['messages'][level].append(str(message).strip())
+                self.result["messages"][level].append(str(message).strip())
             except KeyError:
                 raise InvalidArgument("Level has to be info, error or warn")
 
@@ -886,14 +939,14 @@ class Result(object):
         Skip if it was already validated to avoid
         unwanted re-validation
         """
-        if force != True and self.validated == True:
+        if force is not True and self.validated is True:
             return True
         else:
             try:
-                self._validate_status(self.result['status'])
-                self._validate_msg(self.result['messages'])
-                self._validate_component_result(self.result['componentResults'])
-                self._validate_action(self.result['action'])
+                self._validate_status(self.result["status"])
+                self._validate_msg(self.result["messages"])
+                self._validate_component_result(self.result["componentResults"])
+                self._validate_action(self.result["action"])
             finally:
                 self.validated = True
 
@@ -901,23 +954,34 @@ class Result(object):
         """
         Validate result status
         """
-        if status not in ['OK', 'ERROR', 'WARN']:
-            raise ValidationError("Result status has to be OK, ERROR or WARN, not %s" % status)
+        if status not in ["OK", "ERROR", "WARN"]:
+            raise ValidationError(
+                "Result status has to be OK, ERROR or WARN, not %s" % status
+            )
 
     def _validate_msg(self, msg):
-        types = ['info', 'error', 'warn']
-        if type(msg).__name__ not in ['NoneType', 'dict']:
-            raise ValidationError("Result message has to be a dictionary or None, not %s" % type(msg).__name__)
+        types = ["info", "error", "warn"]
+        if type(msg).__name__ not in ["NoneType", "dict"]:
+            raise ValidationError(
+                "Result message has to be a dictionary or None, not %s"
+                % type(msg).__name__
+            )
 
         if msg:
             # Check every output type and validate it
             for t in types:
                 try:
                     if not isinstance(msg[t], list):
-                        raise ValidationError("Result message type %s has to be a list, not %s" % (t, type(msg[t]).__name__))
+                        raise ValidationError(
+                            "Result message type %s has to be a list, not %s"
+                            % (t, type(msg[t]).__name__)
+                        )
                     for out in msg[t]:
                         if not isinstance(out, basestring):
-                            raise ValidationError("Result message type %s has to be a string, not %s" % (t, type(out).__name__))
+                            raise ValidationError(
+                                "Result message type %s has to be a string, not %s"
+                                % (t, type(out).__name__)
+                            )
                 except Exception as e:
                     raise ValidationError("Can't validate message: %s" % e)
 
@@ -926,7 +990,7 @@ class Result(object):
         Validate componentResults
         """
         # Component result can be empty
-        if result == None:
+        if result is None:
             return True
 
         if not isinstance(result, dict):
@@ -934,12 +998,12 @@ class Result(object):
 
         for name, component in result.items():
             try:
-                self._validate_msg(component['messages'])
+                self._validate_msg(component["messages"])
             except KeyError:
                 raise ValidationError("Component %s doesn't have message" % name)
 
             try:
-                self._validate_status(component['status'])
+                self._validate_status(component["status"])
             except KeyError:
                 raise ValidationError("Component %s doesn't have status" % name)
 
@@ -948,19 +1012,19 @@ class Result(object):
         Validate action result
         """
         # Action can be empty
-        if result == None:
+        if result is None:
             return True
 
         if not isinstance(result, dict):
             raise ValidationError("Action result must be dictionary")
 
         try:
-            self._validate_msg(result['messages'])
+            self._validate_msg(result["messages"])
         except KeyError:
             raise ValidationError("Action doesn't have message")
 
         try:
-            self._validate_status(result['status'])
+            self._validate_status(result["status"])
         except KeyError:
             raise ValidationError("Action doesn't have status")
 
@@ -991,7 +1055,7 @@ class Result(object):
             'warn' : [STRING]
         }
         """
-        fields = [ 'status', 'messages', 'componentResults', 'action' ]
+        fields = ["status", "messages", "componentResults", "action"]
 
         for field in fields:
             try:
@@ -1000,14 +1064,14 @@ class Result(object):
                 # just skip missing fields
                 pass
 
-        if validate == True:
+        if validate is True:
             self.validate()
 
     def get_result(self, validate=True):
         """
         Validate by default and return result
         """
-        if validate == True:
+        if validate is True:
             self.validate()
         return self.result
 
@@ -1016,9 +1080,9 @@ class Result(object):
         Set action result
         """
         if isinstance(action, object):
-            self.result['action'] = action.get_result()
+            self.result["action"] = action.get_result()
         elif isinstance(action, dict):
-            self.result['action'] = action
+            self.result["action"] = action
         else:
             raise InvalidArgument("Action has to be a dict or a Result object")
 
@@ -1026,25 +1090,27 @@ class Result(object):
         """
         Add component result
         """
-        if not self.result['componentResults']:
-            self.result['componentResults'] = {}
+        if not self.result["componentResults"]:
+            self.result["componentResults"] = {}
 
-        self.result['componentResults'][name] = {
-            'status': status,
-            'messages'   : {
-                'info' : info,
-                'error': error,
-                'warn' : warn,
+        self.result["componentResults"][name] = {
+            "status": status,
+            "messages": {
+                "info": info,
+                "error": error,
+                "warn": warn,
             },
         }
+
 
 class BasePlugin(object):
     """
     Base class for all Python plugins
     """
+
     plugin = None
     result = None
-    args   = None
+    args = None
 
     def __init__(self, plugin, **kwargs):
         """
@@ -1068,7 +1134,7 @@ class BasePlugin(object):
         You shouldn't use anything else than this function from inside plugins!
         """
         # Set default timeout
-        if 'timeout' not in kwargs:
-            kwargs['timeout'] = self.plugin.get_param('Timeout', default=120)
+        if "timeout" not in kwargs:
+            kwargs["timeout"] = self.plugin.get_param("Timeout", default=120)
 
         return smoker.util.command.execute(command, **kwargs)

@@ -4,11 +4,12 @@
 
 import ast
 import datetime
-from flask_restful import abort
 import json
 import os
 import re
 import socket
+
+from flask_restful import abort
 
 
 def generate_unique_file():
@@ -71,8 +72,10 @@ def rest_api_response(k, **kwargs):
         return abort(404)  # Return 404 if k don't match predefine pattern
 
     fp = '%s/%s.tmp' % (TMP_DIR, generate_unique_file())
-    open(fp, 'w').write(json.dumps(return_value))
-    return open(fp)
+    with open(fp, 'w') as mockf:
+        mockf.write(json.dumps(return_value))
+
+    return open(fp, "rb")
 
 about_response = {
     'about': {

@@ -11,13 +11,13 @@ Parameters:
 
 """
 
+import logging
+import socket
+import threading
+
 from smoker.server.plugins import BasePlugin
 
-import logging
-lg = logging.getLogger('smokerd.plugin.testconnection')
-
-import threading
-import socket
+lg = logging.getLogger("smokerd.plugin.testconnection")
 
 
 class Plugin(BasePlugin):
@@ -33,19 +33,21 @@ class Plugin(BasePlugin):
          * run ConnectionCheck for all host, port combinations in parallel
         """
         # Get parameters
-        self.addresses = self.plugin.get_param('Connections', [])
-        self.timeout = self.plugin.get_param('Timeout', 10)
+        self.addresses = self.plugin.get_param("Connections", [])
+        self.timeout = self.plugin.get_param("Timeout", 10)
 
         # Defaults
         if not self.addresses and not isinstance(self.addresses, dict):
-            raise Exception('Parameter Connections have to be dictionary of '
-                            '(host, port) tuples')
+            raise Exception(
+                "Parameter Connections have to be dictionary of (host, port) tuples"
+            )
 
         for conn in self.addresses:
-            if (not (isinstance(conn, tuple) or isinstance(conn, list)) and
-                    len(conn) != 2):
-                raise Exception(
-                    "Every parameter has to be a [host, port] list")
+            if (
+                not (isinstance(conn, tuple) or isinstance(conn, list))
+                and len(conn) != 2
+            ):
+                raise Exception("Every parameter has to be a [host, port] list")
 
         threads = []
         for conn in self.addresses:
@@ -60,7 +62,7 @@ class Plugin(BasePlugin):
         status = "OK"
         if err:
             status = "ERROR"
-        self.result.add_component('Connection', status, error=err)
+        self.result.add_component("Connection", status, error=err)
         self.result.set_status()
         return self.result
 
@@ -70,6 +72,7 @@ class ConnectionCheck(threading.Thread):
     Opens socket to supplied address and check the return status,
     leaving results in self.err and self.info array.
     """
+
     def __init__(self, address, timeout):
         threading.Thread.__init__(self)
         self.timeout = timeout
@@ -83,15 +86,14 @@ class ConnectionCheck(threading.Thread):
             s.close()
             self.info.append("Host: %s" % self.address[0])
         except (socket.herror, socket.gaierror) as e:
-            self.err.append(
-                "Host: %s resolving error: %s" % (self.address[0], e))
-        except socket.timeout as e:
-            self.err.append(
-                "Host: %s, port: %s connection timeout" % self.address)
+            self.err.append("Host: %s resolving error: %s" % (self.address[0], e))
+        except socket.timeout:
+            self.err.append("Host: %s, port: %s connection timeout" % self.address)
         except socket.error as e:
-            self.err.append("Host: %s, port: %s, Socket error: %s" %
-                            (self.address[0], self.address[1], e))
+            self.err.append(
+                "Host: %s, port: %s, Socket error: %s"
+                % (self.address[0], self.address[1], e)
+            )
         except Exception as e:
             lg.exception()
-            self.err.append(
-                "Host: %s, Unknown exception: %s" % (self.address[0], e))
+            self.err.append("Host: %s, Unknown exception: %s" % (self.address[0], e))

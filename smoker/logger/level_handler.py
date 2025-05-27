@@ -30,6 +30,7 @@
 import logging
 import sys
 
+
 class LevelHandler(logging.StreamHandler):
     """A handler that logs to console in the sensible way.
 

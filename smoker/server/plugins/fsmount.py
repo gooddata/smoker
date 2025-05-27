@@ -12,11 +12,10 @@ Parameters:
     Mounts  - list of mounts to check (default try to check all)
 """
 
-from builtins import str
+import logging
 import os
 import random
 import re
-import logging
 
 from smoker.server.plugins import BasePlugin
 

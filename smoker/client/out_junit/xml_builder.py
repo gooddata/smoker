@@ -5,9 +5,6 @@
 # https://svn.jenkins-ci.org/trunk/hudson/dtkit/dtkit-format/dtkit-junit-model/src/main/resources/com/thalesgroup/dtkit/junit/model/xsd/junit-4.xsd
 
 
-from builtins import object
-import itertools
-import collections
 import string
 
 

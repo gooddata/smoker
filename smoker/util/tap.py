@@ -43,7 +43,6 @@ print tap.dump()
 #       ok 1 - subtest1
 """
 
-from builtins import object
 import re
 
 class Tap(object):

@@ -11,9 +11,9 @@ limited lenght details per each component if present.
 import argparse
 import logging
 
-from smoker.client import Client
-import smoker.util.nagios as nagios
 import smoker.logger
+import smoker.util.nagios as nagios
+from smoker.client import Client
 
 UNKNOWN = "UNKNOWN"
 ERROR = "ERROR"

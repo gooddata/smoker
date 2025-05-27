@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2015, GoodData(R) Corporation. All rights reserved
 
-from builtins import object
 import copy
 import datetime
 import os
+
 import pytest
+
 from smoker.server.daemon import Smokerd
 
 
@@ -65,7 +66,9 @@ class TestDaemon(object):
 
     def test_load_config_with_include(self):
         yaml_file = '%s/%s.yaml' % (self.conf_dir, generate_unique_file())
-        conf_smokerd = open(self.conf_dir + '/smokerd_basic.yaml', 'r').read()
+
+        with open(self.conf_dir + '/smokerd_basic.yaml', 'r') as cfg:
+            conf_smokerd = cfg.read()
 
         expected_plugins = copy.deepcopy(self.expected_plugins)
         expected = dict(expected_plugins, **copy.deepcopy(self.expected_basic))

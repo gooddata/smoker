@@ -6,8 +6,8 @@ import argparse
 import logging
 import sys
 
-from smoker.server.daemon import Smokerd
 import smoker.logger
+from smoker.server.daemon import Smokerd
 
 
 def main():

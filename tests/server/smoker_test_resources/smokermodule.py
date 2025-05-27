@@ -8,6 +8,7 @@ basic informations about system
 """
 
 import os
+
 from smoker.server.plugins import BasePlugin
 
 

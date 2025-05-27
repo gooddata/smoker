@@ -2,22 +2,18 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
-from future import standard_library
-standard_library.install_aliases()
-from builtins import object
-import logging
-lg = logging.getLogger('smoker')
-
-import threading
-import urllib.request, urllib.error, urllib.parse
-import simplejson
-import time
 import datetime
-import sys
+import json
+import logging
+import threading
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
 
-from smoker.util.progressbar import ProgressBar, NonInteractiveError
+from smoker.util.progressbar import NonInteractiveError, ProgressBar
 
-_PY3 =  sys.version_info[0] == 3
+lg = logging.getLogger('smoker')
 
 
 class Client(object):
@@ -134,7 +130,7 @@ class Client(object):
             # No plugins for host, skip it
             try:
                 host['plugins']['items']
-            except:
+            except KeyError:
                 continue
 
             for plugin in host['plugins']['items']:
@@ -148,7 +144,7 @@ class Client(object):
                     # Create result structure if it doesn't exists
                     try:
                         result[name]
-                    except:
+                    except KeyError:
                         result[name] = {
                             'status' : None,
                             'plugins': {},
@@ -182,7 +178,8 @@ class Client(object):
                 return False
 
         # return True or False depending on negative variable
-        match_result = lambda match: not match if negative else match
+        def match_result(match):
+            return not match if negative else match
 
         match = True
         for filter in filters:
@@ -194,8 +191,10 @@ class Client(object):
                     try:
                         if plugin['lastResult']['status'] in value:
                             match = True
-                            if not negative: continue
-                            else: break
+                            if not negative:
+                                continue
+                            else:
+                                break
                         else:
                             match = False
                             break
@@ -203,8 +202,10 @@ class Client(object):
                         # Unknown state - no plugin['lastResult']['status'] or it's NoneType
                         if 'UNKNOWN' in value:
                             match = True
-                            if not negative: continue
-                            else: break
+                            if not negative:
+                                continue
+                            else:
+                                break
                         else:
                             match = False
                             break
@@ -214,8 +215,10 @@ class Client(object):
                     if plugin['parameters'][filter['key']] == filter['value']:
                         lg.debug("Plugin %s matched filter %s = %s" % (plugin['name'], filter['key'], filter['value']))
                         match = True
-                        if not negative: continue
-                        else: break
+                        if not negative:
+                            continue
+                        else:
+                            break
                     else:
                         lg.debug("Plugin %s doesn't match filter %s = %s" % (plugin['name'], filter['key'], filter['value']))
                         match = False
@@ -283,7 +286,7 @@ class Client(object):
                 progress.wait_pool(pool)
         except NonInteractiveError as e:
             # Fallback to non-progress wait
-            lg.warn(e)
+            lg.warning(e)
             self.wait(pool)
 
 class Host(object):
@@ -348,22 +351,20 @@ class Host(object):
         url = '%s%s' % (self.url, uri)
         lg.info("Host %s: requesting url %s" % (self.name, url))
         try:
-            fh = urllib.request.urlopen(url, timeout=timeout, data=data)
+            with urllib.request.urlopen(url, timeout=timeout, data=data) as fh:
+                resp = fh.read().decode('utf-8')
         except Exception as e:
             lg.error("Host %s: can't open resource %s: %s" % (self.name, url, e))
             return False
 
-        fh = fh.read()
-        if not _PY3:
-            fh = fh.decode('utf-8')
         try:
-            json = simplejson.loads(fh)
+            json_data = json.loads(resp)
         except Exception as e:
             lg.error("Host %s: can't load response as JSON: %s" % (self.name, e))
             return False
 
-        self._result = json
-        return json
+        self._result = json_data
+        return json_data
 
     def force_run(self, plugins):
         """
@@ -376,7 +377,7 @@ class Host(object):
         }
         """
         plugins_list = list(plugins.keys())
-        data = simplejson.dumps({
+        data = json.dumps({
             'process' : {
                 'plugins' : plugins_list,
             }

@@ -6,22 +6,17 @@
 Module for various command executions
 """
 
-from future import standard_library
-standard_library.install_aliases()
-from past.builtins import basestring
-from builtins import object
-import subprocess
-import sys
-import threading
-import os
-import psutil
 import atexit
 import datetime
 import logging
+import os
+import subprocess
+import threading
 import time
-lg = logging.getLogger(__name__)
 
-_PY3 = sys.version_info[0] == 3
+import psutil
+
+lg = logging.getLogger(__name__)
 
 
 def execute(command, timeout=None, **kwargs):
@@ -137,17 +132,8 @@ def _unregister_cleanup(pid):
     :param pid: process id
     """
     lg.debug("Unregistering cleanup for pid %s" % pid)
-
-    # Newer atexit has unregister, but we want to be compatible
-
-    if _PY3:
-        atexit.unregister(_proc_cleanup)
-        return
-    
-    for handler in atexit._exithandlers:
-        (func, args, kwargs) = handler
-        if func == _proc_cleanup and args == (pid,):
-            atexit._exithandlers.remove(handler)
+    atexit.unregister(_proc_cleanup)
+    return
 
 class Command(object):
     """
@@ -178,7 +164,7 @@ class Command(object):
         }
 
         # We want to pass shell=True argument if we have string command
-        if isinstance(command, basestring):
+        if isinstance(command, str):
             popen_args['shell'] = True
 
         # Merge our arguments and supplied ones in kwargs

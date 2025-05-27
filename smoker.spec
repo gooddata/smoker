@@ -1,7 +1,7 @@
 %bcond_with check
 
 Name:		smoker
-Version:	2.2.4
+Version:	2.3.0
 Release:	0%{?dist}
 Epoch:		1
 Summary:	Smoke Testing Framework
@@ -12,26 +12,6 @@ Source0:	%{name}.tar.gz
 
 BuildArch:	noarch
 
-%if 0%{?el7}
-BuildRequires:  python2-devel
-BuildRequires:  python2-setuptools
-%if %{with check}
-BuildRequires:  python2-pytest
-BuildRequires:  python2-mock
-BuildRequires:  python2-flask-restful
-BuildRequires:  python2-future
-BuildRequires:  python2-psutil
-BuildRequires:  python2-pyyaml
-BuildRequires:  python-setproctitle
-BuildRequires:  python2-simplejson
-%endif
-Requires:       python2-flask-restful
-Requires:       python2-future
-Requires:       python2-psutil
-Requires:       python2-pyyaml
-Requires:       python-setproctitle
-Requires:       python2-simplejson
-%else
 BuildRequires:  python3-devel
 BuildRequires:  python3-setuptools
 %if %{with check}
@@ -42,8 +22,6 @@ BuildRequires:  python3dist(future)
 BuildRequires:  python3dist(psutil)
 BuildRequires:  python3dist(pyyaml)
 BuildRequires:  python3dist(setproctitle)
-BuildRequires:  python3dist(simplejson)
-%endif
 %endif
 
 BuildRequires:  systemd
