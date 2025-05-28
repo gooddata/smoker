@@ -56,7 +56,7 @@ OUTPUT
         full    - host, all plugins and component results + all messages + plugin info
 
         raw     - pprint output
-        json    - simplejson output
+        json    - json output
 
     It's formatted in following scheme
         {format_host}
@@ -102,6 +102,7 @@ EXAMPLES
 """
 
 import sys
+
 from smoker.client.cli import main
 
 if __name__ == '__main__':

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 # Copyright © 2007-2018, All rights reserved. GoodData® Corporation, http://gooddata.com
 
-from builtins import zip
-import re
-import itertools
 import collections
+import collections.abc
+import itertools
+import re
 import string
 
 _tuple_cache = {}
@@ -137,7 +137,7 @@ def create(data, template, additional_fields=None):
 
     def is_scalar(obj):
         '''Object is scalar / atom. Cannot be delved into.'''
-        return not (isinstance(obj, collections.Mapping) or is_iterable(obj))
+        return not (isinstance(obj, collections.abc.Mapping) or is_iterable(obj))
 
     def iter_tuplepairs(structure):
         '''
@@ -146,14 +146,14 @@ def create(data, template, additional_fields=None):
         :rtype: iterator((value, value))
         :return: iterator of pairs [('key1', 'val1'), ('key1', 'val1'), ...]  or [(1, 'val1'), (2, 'val3')]
         '''
-        # is some string 
+        # is some string
         if isinstance(structure, (str, bytes)):
             return tuple()
         # is some kind of dictionary
-        elif isinstance(structure, collections.Mapping):
+        elif isinstance(structure, collections.abc.Mapping):
             return iteritems(structure)
         # is some kind of enumarable
-        elif isinstance(structure, collections.Sequence) or is_iterable(structure):
+        elif isinstance(structure, collections.abc.Sequence) or is_iterable(structure):
             return enumerate(structure)
         else:
             return tuple()
@@ -267,7 +267,7 @@ def create(data, template, additional_fields=None):
 
         for (name, val, child) in children:
             sub_templ = delve_in_template(t, name, val)
-            if isinstance(sub_templ, collections.Mapping):
+            if isinstance(sub_templ, collections.abc.Mapping):
                 do_iter(path + bound_names + ((name, val),),
                         child,
                         sub_templ)

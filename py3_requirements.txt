@@ -1,6 +1,0 @@
-Flask-RESTful>=0.3,<1
-future
-psutil
-PyYAML
-simplejson
-setproctitle

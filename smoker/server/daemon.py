@@ -2,15 +2,14 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
-from builtins import str
-from builtins import object
 import glob
 import logging
 import os
-import psutil
 import signal
 import sys
 import time
+
+import psutil
 import yaml
 
 from smoker.server import redirect_standard_io
@@ -67,7 +66,7 @@ class Smokerd(object):
         self.conf_dirs.append(os.path.dirname(filepath))
         try:
             with open(filepath, 'r') as inputfile:
-                return yaml.load(inputfile)
+                return yaml.safe_load(inputfile)
         except IOError as e:
             lg.error("Can't include config file %s: %s" % (filepath, e))
             raise
@@ -90,7 +89,7 @@ class Smokerd(object):
             plugin, _ = os.path.splitext(os.path.basename(file))
             content += '    %s: !include %s\n' % (plugin, file)
 
-        return yaml.load(content)
+        return yaml.safe_load(content)
 
     def _load_config(self):
         """
@@ -108,7 +107,7 @@ class Smokerd(object):
         yaml.add_constructor('!include', self._yaml_include)
 
         try:
-            conf = yaml.load(config)
+            conf = yaml.safe_load(config)
         except Exception as e:
             lg.error("Can't parse config file %s: %s" % (self.conf['config'], e))
             raise

@@ -13,14 +13,15 @@ Parameters:
     ReplicaSet  - replica set to use (default text)
 """
 
-from builtins import str
+import datetime
 import logging
 
+import pymongo
+
 from smoker.server.plugins import BasePlugin
+
 lg = logging.getLogger('smokerd.plugin.mongo')
 
-import datetime
-import pymongo
 
 class Plugin(BasePlugin):
     connection = None

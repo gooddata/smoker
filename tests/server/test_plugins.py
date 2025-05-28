@@ -3,19 +3,20 @@
 # Copyright (C) 2007-2015, GoodData(R) Corporation. All rights reserved
 
 # from builtins import str
-from builtins import range
-from builtins import object
 import copy
 import datetime
 import multiprocessing
 import os
-import psutil
-import pytest
 import re
 import sys
-from smoker.server import exceptions as smoker_exceptions
-import smoker.server.plugins as server_plugins
 import time
+
+import psutil
+import pytest
+
+import smoker.server.plugins as server_plugins
+from smoker.server import exceptions as smoker_exceptions
+
 
 class TestPluginManager(object):
     """Unit tests for the PluginManager class"""
@@ -599,7 +600,6 @@ class TestPluginWorker(object):
 
     def test_run_command_with_invalid_parser_path(self):
         expected_info = ['GoodData Smoker']
-        expected_error = ['Parser run failed: No module named InvalidParser']
         test_params = {
             'Command': 'echo "GoodData Smoker"',
             'Parser': 'InvalidParser'

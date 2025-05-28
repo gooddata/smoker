@@ -33,7 +33,6 @@
 #         return ['%s-%s' % (args.prefix, args.example)]
 
 
-from builtins import object
 class SpecificArgument(object):
     """
     Argparse argument to be added to the smoker CLI specific to this plugin

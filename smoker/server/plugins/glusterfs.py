@@ -10,17 +10,18 @@ Parameters:
     Volume  - volume to run mount/unmount test. If it's not set, mount test won't be executed.
 """
 
-from builtins import range
 import logging
-lg = logging.getLogger('smokerd.plugin.glusterfs')
+import os
+import random
+import subprocess
+import tempfile
+import time
+from xml.dom import minidom
 
 from smoker.server.plugins import BasePlugin
-from xml.dom import minidom
-import subprocess
-import os
-import tempfile
-import random
-import time
+
+lg = logging.getLogger('smokerd.plugin.glusterfs')
+
 
 class Plugin(BasePlugin):
     def run(self):
@@ -69,7 +70,7 @@ class Plugin(BasePlugin):
         }
 
         for host, peer in peers.items():
-            if peer['connected'] == True:
+            if peer['connected'] is True:
                 messages['info'].append('Peer %s is healthy: %s (Connected)' % (host, peer['status']))
             else:
                 messages['error'].append('Peer %s is not healthy: %s (Disconnected)' % (host, peer['status']))
@@ -103,7 +104,7 @@ class Plugin(BasePlugin):
                 for node, status in nodes.items():
                     if node != 'status' and status != 1:
                         failed.append(node)
-                
+
                 messages['error'].append("Volume %s is not healthy (failed nodes: %s)" % (vol, ', '.join(failed)))
                 status = 'ERROR'
             else:
@@ -128,7 +129,7 @@ class Plugin(BasePlugin):
 
         try:
             xml = minidom.parseString(stdout)
-        except Exception as e:
+        except Exception:
             # eg. No peers present
             raise Exception(stdout)
 
@@ -137,7 +138,7 @@ class Plugin(BasePlugin):
                 hostname = xml.getElementsByTagName('friend%d.hostname' % i)[0].toxml().replace('<friend%d.hostname>' % i, '').replace('</friend%d.hostname>' % i, '')
                 connected   = xml.getElementsByTagName('friend%d.connected' % i)[0].toxml().replace('<friend%d.connected>' % i, '').replace('</friend%d.connected>' % i, '')
                 status = xml.getElementsByTagName('friend%d.state' % i)[0].toxml().replace('<friend%d.state>' % i, '').replace('</friend%d.state>' % i, '')
-            except:
+            except Exception:
                 continue
 
             # Update connected status
@@ -208,7 +209,7 @@ class Plugin(BasePlugin):
 
             try:
                 xml = minidom.parseString(stdout)
-            except Exception as e:
+            except Exception:
                 raise Exception("Unexpected output from gluster volume status %s --xml: %s" % (volume, stdout))
 
             # Can't get volume info, sleep for a while and try it again (only one command of this type can be run on cluster)
@@ -255,7 +256,7 @@ class Plugin(BasePlugin):
                 if retval:
                     messages['error'].append(stderr)
                     status = 'ERROR'
-            
+
             self.result.add_component('Mount', status, **messages)
         finally:
             os.rmdir(tmp)

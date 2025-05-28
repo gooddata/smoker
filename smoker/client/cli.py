@@ -7,23 +7,20 @@ Client tool for GDC Smoker daemon
 
 See pydoc for command line tool smoker.py
 """
-from __future__ import print_function
-
-from past.builtins import basestring
 import argparse
 import datetime
 import glob
+import json
 import logging
 import os
-import simplejson
 import sys
+
 import yaml
 
-from smoker.client import Client
 import smoker.logger
+from smoker.client import Client
 from smoker.client.out_junit import plugins_to_xml
-from smoker.util.tap import TapTest, Tap
-
+from smoker.util.tap import Tap, TapTest
 
 smoker.logger.init(syslog=False)
 lg = logging.getLogger('smokercli')
@@ -491,7 +488,7 @@ def main():
                     'key'  : f.split(' ')[0],
                     'value': f.split(' ')[1]
                 }
-            except:
+            except IndexError:
                 lg.error("Invalid filter parameter format!")
                 sys.exit(1)
 
@@ -585,7 +582,7 @@ def main():
         sys.exit(0)
     elif args.pretty == 'json':
         # We need custom encoder to encode datetime objects
-        class JSONEncoder(simplejson.JSONEncoder):
+        class JSONEncoder(json.JSONEncoder):
             """
             JSON encoder that converts datetime.datetime object to isoformat
             string
@@ -593,9 +590,9 @@ def main():
             def default(self, obj):
                 if isinstance(obj, datetime.datetime):
                     return obj.isoformat()
-                return simplejson.JSONEncoder.default(self, obj)
+                return json.JSONEncoder.default(self, obj)
 
-        print(simplejson.dumps(plugins, cls=JSONEncoder))
+        print(json.dumps(plugins, cls=JSONEncoder))
         sys.exit(0)
     elif args.pretty == 'tap':
         dump = dump_tap(plugins)
@@ -615,7 +612,8 @@ def main():
         # Print host if not already printed
         if host['name'] not in hosts_printed:
             # Add empty line if any previous host
-            if hosts_printed: output.append(" ")
+            if hosts_printed:
+                output.append(" ")
             if isinstance(format_host, dict):
                 output.append(format_host[host['status']].format(**host))
             else:
@@ -626,7 +624,7 @@ def main():
         if not isinstance(plugin, dict):
             # Not a plugin
             continue
-        if isinstance(format_plugin, basestring):
+        if isinstance(format_plugin, str):
             output.append(format_plugin.format(**plugin))
         else:
             output.append(format_plugin[plugin['lastResult']['status']].format(**plugin))
@@ -644,7 +642,7 @@ def main():
             for level, message in plugin['lastResult']['messages'].items():
                 # For each message
                 for msg in message:
-                    if isinstance(format_plugin_msg, basestring):
+                    if isinstance(format_plugin_msg, str):
                         output.append(format_plugin_msg.format(level=level, msg=msg.encode('utf8')))
                     else:
                         output.append(format_plugin_msg[level].format(level=level, msg=msg.encode('utf8')))
@@ -653,7 +651,7 @@ def main():
         if plugin['lastResult']['componentResults']:
             for component in plugin['lastResult']['componentResults']:
                 component = component['componentResult']
-                if isinstance(format_plugin_component, basestring):
+                if isinstance(format_plugin_component, str):
                     output.append(format_plugin_component.format(**component))
                 else:
                     output.append(format_plugin_component[component['status']].format(**component))
@@ -664,7 +662,7 @@ def main():
                     for level, message in component['messages'].items():
                         # For each message
                         for msg in message:
-                            if isinstance(format_plugin_component_msg, basestring):
+                            if isinstance(format_plugin_component_msg, str):
                                 output.append(format_plugin_component_msg.format(level=level, msg=msg.encode('utf8')))
                             else:
                                 output.append(format_plugin_component_msg[level].format(level=level, msg=msg.encode('utf8')))

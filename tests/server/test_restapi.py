@@ -2,17 +2,17 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2015, GoodData(R) Corporation. All rights reserved
 
-from builtins import range
-from builtins import object
 import copy
 import datetime
 import os
-import pytest
-from smoker.server.daemon import Smokerd
-from smoker.server import exceptions as smoker_exceptions
-import smoker.server.plugins as server_plugins
-from smoker.server import restserver
 import time
+
+import pytest
+
+import smoker.server.plugins as server_plugins
+from smoker.server import exceptions as smoker_exceptions
+from smoker.server import restserver
+from smoker.server.daemon import Smokerd
 
 
 class TestRestAPI(object):

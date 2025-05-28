@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2007-2013, GoodData(R) Corporation. All rights reserved
 
-from __future__ import print_function
 import sys
 
 EXIT_OK = 0

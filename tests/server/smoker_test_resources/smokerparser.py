@@ -3,6 +3,7 @@
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
 import re
+
 from smoker.server.parser import BaseParser
 
 
