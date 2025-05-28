@@ -144,6 +144,16 @@ def print_in_progress(id):
     return response
 
 
+# helper function to serialize objects to JSON
+def default_json_serializer(obj):
+    try:
+        return obj.json()
+    except AttributeError:
+        raise TypeError(
+            f"Object of type {obj.__class__.__name__} is not JSON serializable"
+        )
+
+
 class About(Resource):
     """
     Print the basic usage
@@ -296,6 +306,10 @@ class RestServer(multiprocessing.Process):
         self.host = smokerd.conf["bind_host"]
         self.port = smokerd.conf["bind_port"]
         self.app = Flask(__name__)
+        self.app.config["RESTFUL_JSON"] = {
+            "default": default_json_serializer,
+        }
+
         self.api = Api(self.app)
         self.api.add_resource(About, "/")
         self.api.add_resource(Plugins, "/plugins", "/plugins/")

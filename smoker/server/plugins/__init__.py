@@ -486,6 +486,21 @@ class Plugin(object):
 
         return self.result[-1]
 
+    def json(self):
+        """
+        Return seriablizable object
+        """
+        return {
+            "name": self.name,
+            "parameters": self.params,
+            "nextRun": self.next_run.isoformat() if self.next_run else None,
+            "lastResult": self.get_last_result(),
+            "forcedResult": self.forced_result,
+            "links": {
+                "self": "/plugins/%s" % self.name,
+            },
+        }
+
 
 class PluginWorker(multiprocessing.Process):
     def __init__(self, name, queue, params, forced=False):
@@ -1101,6 +1116,12 @@ class Result(object):
                 "warn": warn,
             },
         }
+
+    def json(self):
+        """
+        Return serializable result
+        """
+        return self.get_result()
 
 
 class BasePlugin(object):
