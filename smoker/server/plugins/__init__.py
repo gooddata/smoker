@@ -65,7 +65,7 @@ class PluginManager(object):
 
         # We don't want to have process ID 0 (first index)
         # so fill it by dummy process
-        self.processes = [{"plugins": []}]
+        self.processes = [None]
 
         self.stopping = False
 

@@ -103,8 +103,8 @@ class Smokerd(object):
             raise
 
         # Register include constructors
-        yaml.add_constructor('!include_dir', self._yaml_include_dir)
-        yaml.add_constructor('!include', self._yaml_include)
+        yaml.SafeLoader.add_constructor('!include_dir', self._yaml_include_dir)
+        yaml.SafeLoader.add_constructor('!include', self._yaml_include)
 
         try:
             conf = yaml.safe_load(config)
