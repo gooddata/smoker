@@ -1,7 +1,7 @@
 %bcond_with check
 
 Name:		smoker
-Version:	2.3.0
+Version:	2.3.1
 Release:	0%{?dist}
 Epoch:		1
 Summary:	Smoke Testing Framework
