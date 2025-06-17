@@ -1,7 +1,7 @@
 %bcond_with check
 
 Name:		smoker
-Version:	2.3.0
+Version:	2.3.1
 Release:	0%{?dist}
 Epoch:		1
 Summary:	Smoke Testing Framework
@@ -18,7 +18,6 @@ BuildRequires:  python3-setuptools
 BuildRequires:  python3dist(pytest)
 BuildRequires:  python3dist(mock)
 BuildRequires:  python3dist(flask-restful)
-BuildRequires:  python3dist(future)
 BuildRequires:  python3dist(psutil)
 BuildRequires:  python3dist(pyyaml)
 BuildRequires:  python3dist(setproctitle)

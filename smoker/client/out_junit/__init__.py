@@ -15,7 +15,6 @@ So sorting or structuring testsuites/testcases is futile effort.
 Important is to properly set 'classname' and 'name' attributes for testcase
 elements.
 '''
-from __future__ import absolute_import
 
 from html import escape
 import collections
