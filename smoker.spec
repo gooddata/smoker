@@ -18,7 +18,6 @@ BuildRequires:  python3-setuptools
 BuildRequires:  python3dist(pytest)
 BuildRequires:  python3dist(mock)
 BuildRequires:  python3dist(flask-restful)
-BuildRequires:  python3dist(future)
 BuildRequires:  python3dist(psutil)
 BuildRequires:  python3dist(pyyaml)
 BuildRequires:  python3dist(setproctitle)
