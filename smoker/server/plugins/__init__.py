@@ -15,7 +15,6 @@ import time
 from builtins import object, str
 
 import setproctitle
-from past.builtins import basestring
 
 import smoker.util.command
 from smoker.server.exceptions import (
@@ -348,7 +347,7 @@ class Plugin(object):
         :param params: keyword arguments
         :type params: dict
         """
-        assert isinstance(name, basestring)
+        assert isinstance(name, str)
         assert isinstance(params, dict)
         self.name = name
         self.params = dict(self.params_default, **params)
@@ -777,7 +776,7 @@ class PluginWorker(multiprocessing.Process):
                         escaped[key] = re.escape(value)
                     except Exception:
                         escaped[key] = value
-        elif isinstance(tbe, basestring):
+        elif isinstance(tbe, (str, bytes)):
             try:
                 escaped = re.escape(tbe)
             except Exception:
@@ -992,7 +991,7 @@ class Result(object):
                             % (t, type(msg[t]).__name__)
                         )
                     for out in msg[t]:
-                        if not isinstance(out, basestring):
+                        if not isinstance(out, (str, bytes)):
                             raise ValidationError(
                                 "Result message type %s has to be a string, not %s"
                                 % (t, type(out).__name__)
