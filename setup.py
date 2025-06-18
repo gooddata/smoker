@@ -18,7 +18,7 @@ with open("requirements.txt") as f:
 # Parameters for build
 params = {
     "name": name,
-    "version": "2.3.1",
+    "version": "2.3.2",
     "packages": [
         "smoker",
         "smoker.server",
