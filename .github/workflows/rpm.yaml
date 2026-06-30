@@ -1,0 +1,24 @@
+---
+name: RPM
+
+on:
+  pull_request:
+  merge_group:
+    types: [checks_requested]
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: koji-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'push' }}
+
+jobs:
+  koji-build:
+    name: Koji Build
+    uses: gooddata/github-actions/.github/workflows/koji-build.yaml@master
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      target_group: tools
