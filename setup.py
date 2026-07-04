@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
 import sys
@@ -36,7 +35,7 @@ params = {
     ],
     "url": "https://github.com/gooddata/smoker",
     "download_url": "https://github.com/gooddata/smoker",
-    "license": "BSD",
+    "license": "BSD-3-Clause",
     "author": "GoodData Corporation",
     "author_email": "python@gooddata.com",
     "maintainer": "Filip Pytloun",
@@ -49,7 +48,6 @@ params = {
         "Environment :: No Input/Output (Daemon)",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
-        "License :: OSI Approved :: BSD License",
         "Natural Language :: English",
         "Operating System :: POSIX",
         "Programming Language :: Python",
@@ -61,7 +59,7 @@ params = {
     "platforms": ["POSIX"],
     "provides": ["smoker"],
     "install_requires": requirements,
-    "test_suite": "tests",
+    "python_requires": ">=3.9",
     "package_data": {"smoker": ["DESCRIPTION.md"]},
 }
 
