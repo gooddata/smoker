@@ -2,11 +2,11 @@
 
 Name:		smoker
 Version:	2.3.2
-Release:	2%{?dist}
+Release:	3%{?dist}
 Epoch:		1
 Summary:	Smoke Testing Framework
 
-License:	BSD
+License:	BSD-3-Clause
 URL:		https://github.com/gooddata/smoker
 Source0:	%{name}.tar.gz
 
@@ -19,7 +19,6 @@ BuildRequires:  python3-wheel
 BuildRequires:  pyproject-rpm-macros
 %if %{with check}
 BuildRequires:  python3dist(pytest)
-BuildRequires:  python3dist(mock)
 BuildRequires:  python3dist(flask-restful)
 BuildRequires:  python3dist(psutil)
 BuildRequires:  python3dist(pyyaml)
@@ -73,6 +72,12 @@ install -pm644 -t %{buildroot}%{_unitdir} smokerd.service
 %systemd_postun smokerd.service
 
 %changelog
+* Sat Jul 04 2026 Robert Moucha <robert.moucha@gooddata.com> - 1:2.3.2-3
+- Use the BSD-3-Clause SPDX identifier for License instead of the bare
+  "BSD" string, matching setup.py.
+- Drop python3dist(mock) from the %%check BuildRequires now that
+  tests/server/test_client.py uses stdlib unittest.mock.
+
 * Sat Jul 04 2026 Robert Moucha <robert.moucha@gooddata.com> - 1:2.3.2-2
 - Drop EL7/python2 support. Target EL9+ and Fedora 43+, where python3 is
   always >= 3.9; remove the now-dead %%py2_build/%%py2_install/%%python2
