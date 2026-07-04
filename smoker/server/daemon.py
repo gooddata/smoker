@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
 import glob
@@ -19,7 +17,7 @@ from smoker.server.restserver import RestServer
 lg = logging.getLogger('smokerd.daemon')
 
 
-class Smokerd(object):
+class Smokerd:
     """
     Main entrance for smokerd
     """

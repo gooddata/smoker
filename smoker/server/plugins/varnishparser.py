@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
 """
@@ -21,7 +19,7 @@ class Parser(BaseParser):
         If we got stdout, parse it and return result.
         Else return Exception that is handled by smokerd.
         """
-        backends = re.findall("Backend\ (.*)\ is\ (.*)\n.*\nAverage responsetime of good probes:\ (.*)", self.stdout)
+        backends = re.findall(r"Backend\ (.*)\ is\ (.*)\n.*\nAverage responsetime of good probes:\ (.*)", self.stdout)
 
         if not backends:
             raise Exception("No backends found or output can't be parsed!")

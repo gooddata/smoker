@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2007-2015, GoodData(R) Corporation. All rights reserved
 #
 # Example plugin:
@@ -33,7 +32,7 @@
 #         return ['%s-%s' % (args.prefix, args.example)]
 
 
-class SpecificArgument(object):
+class SpecificArgument:
     """
     Argparse argument to be added to the smoker CLI specific to this plugin
     """
@@ -47,7 +46,7 @@ class SpecificArgument(object):
         self.kwargs = kwargs
 
 
-class HostDiscoveryPluginBase(object):
+class HostDiscoveryPluginBase:
     """
     Host discovery plugin interface
     Inherit from this class when creating a host discovery plugin

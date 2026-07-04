@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # Copyright (C) 2007-2015, GoodData(R) Corporation. All rights reserved
 
 # from builtins import str
@@ -18,7 +16,7 @@ import smoker.server.plugins as server_plugins
 from smoker.server import exceptions as smoker_exceptions
 
 
-class TestPluginManager(object):
+class TestPluginManager:
     """Unit tests for the PluginManager class"""
 
     conf_plugins_to_load = {
@@ -309,7 +307,7 @@ class TestPluginManager(object):
         assert plugin.current_run
 
 
-class TestPlugin(object):
+class TestPlugin:
     """Unit tests for the Plugin class"""
 
     test_params_default = {
@@ -499,7 +497,7 @@ class TestPlugin(object):
         assert plugin.forced_result == plugin.result[-1]
 
 
-class TestPluginWorker(object):
+class TestPluginWorker:
     """Unit tests for the PluginWorker class"""
     action = {
         'Command': 'hostname -f',
@@ -703,7 +701,7 @@ class TestPluginWorker(object):
         assert not worker.get_param('InvalidParamater')
 
 
-class TestResult(object):
+class TestResult:
     """Unit tests for the PluginWorker class"""
 
     result_to_validate = {

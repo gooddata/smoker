@@ -1,10 +1,8 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
 from smoker.server.plugins import Result
 
-class BaseParser(object):
+class BaseParser:
     """
     Base class for all parsers
     """

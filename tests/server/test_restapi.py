@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # Copyright (C) 2007-2015, GoodData(R) Corporation. All rights reserved
 
 import copy
@@ -15,7 +13,7 @@ from smoker.server import restserver
 from smoker.server.daemon import Smokerd
 
 
-class TestRestAPI(object):
+class TestRestAPI:
     """Unit tests for the restserver functions"""
     component_result = {
         'componentResults': {

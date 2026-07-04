@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright © 2007-2018, All rights reserved. GoodData® Corporation, http://gooddata.com
 
 # xml schema for jenkins junit xml format is here:
@@ -8,7 +7,7 @@
 import string
 
 
-class XmlBuilder(object):
+class XmlBuilder:
     '''
     Template for building basic XML structure.
 

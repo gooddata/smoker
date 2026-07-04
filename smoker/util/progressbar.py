@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # Copyright (C) 2007-2013, GoodData(R) Corporation. All rights reserved
 
 """
@@ -29,7 +27,7 @@ from util.progressbar import ProgressBar, NonInteractiveError
 try:
     progress = ProgressBar(len(pool))
 except NonInteractiveError as e:
-    print e
+    print(e)
     # fallback to non-progress wait
 """
 import numbers
@@ -89,7 +87,7 @@ class ProgressBar(threading.Thread, object):
             self.template = '{wheel} {bar}\t{counter}'
 
         # Run Thread constructor, we want to be daemonic thread
-        super(ProgressBar, self).__init__()
+        super().__init__()
         self.daemon = True
 
     def add_done(self, count=1):
@@ -178,7 +176,7 @@ class ProgressBar(threading.Thread, object):
             time.sleep(1)
 
 ### Elements
-class Element(object):
+class Element:
     """
     Base Element class
     """

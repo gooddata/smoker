@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
 import datetime
@@ -42,7 +40,7 @@ def alarm_handler(signum, frame):
     raise PluginExecutionTimeout
 
 
-class PluginManager(object):
+class PluginManager:
     """
     PluginManager provides management and
     access to plugins
@@ -314,7 +312,7 @@ class PluginManager(object):
                 plugin.current_run = None
 
 
-class Plugin(object):
+class Plugin:
     """
     Object that represents single plugin
     """
@@ -513,7 +511,7 @@ class PluginWorker(multiprocessing.Process):
         #    from multiprocessing.popen_fork import Popen
         #    self._Popen = Popen
 
-        super(PluginWorker, self).__init__()
+        super().__init__()
         self.daemon = True
 
     def run(self):
@@ -844,7 +842,7 @@ class PluginWorker(multiprocessing.Process):
             raise
 
 
-class Result(object):
+class Result:
     """
     Object that represents plugin result
     """
@@ -1123,7 +1121,7 @@ class Result(object):
         return self.get_result()
 
 
-class BasePlugin(object):
+class BasePlugin:
     """
     Base class for all Python plugins
     """

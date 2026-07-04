@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2007-2015, GoodData(R) Corporation. All rights reserved
 """
 Module providing base http server for smokerd REST API
@@ -319,7 +318,7 @@ class RestServer(multiprocessing.Process):
         self.api.add_resource(Processes, "/processes", "/processes/")
         self.api.add_resource(Process, "/processes/<int:id>", "/processes/<int:id>/")
 
-        super(RestServer, self).__init__()
+        super().__init__()
 
     def _reopen_logfiles(self, signum=None, frame=None):
         lg.info("REST API server received SIGHUP, reopening log files")

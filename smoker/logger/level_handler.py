@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Copyright (C) 2007-2018, GoodData(R) Corporation. All rights reserved
 
 # Derived from

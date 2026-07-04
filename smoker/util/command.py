@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # Copyright (C) 2007-2013, GoodData(R) Corporation. All rights reserved
 
 """
@@ -135,7 +133,7 @@ def _unregister_cleanup(pid):
     atexit.unregister(_proc_cleanup)
     return
 
-class Command(object):
+class Command:
     """
     Class for command executions
     """

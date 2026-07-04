@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # Copyright (C) 2007-2012, GoodData(R) Corporation. All rights reserved
 
 import datetime
@@ -16,7 +14,7 @@ from smoker.util.progressbar import NonInteractiveError, ProgressBar
 lg = logging.getLogger('smoker')
 
 
-class Client(object):
+class Client:
     """
     Object providing access to the group of hosts
     """
@@ -289,7 +287,7 @@ class Client(object):
             lg.warning(e)
             self.wait(pool)
 
-class Host(object):
+class Host:
     """
     Object representing single smokerd server
     """
@@ -434,7 +432,7 @@ class PluginsResult(dict):
     """
 
     def __init__(self, *args, **kwargs):
-        super(PluginsResult, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # Convert self structure to use PluginResult and HostResult instead of simple dict
         for name in self:
@@ -479,7 +477,7 @@ class PluginResult(dict):
         """
         Initialize dict and fix plugin structure
         """
-        super(PluginResult, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._fix_plugin()
 
     def _fix_plugin(self):
@@ -511,7 +509,7 @@ class HostResult(dict):
         """
         Initialize dict and fix host structure
         """
-        super(HostResult, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._fix_host()
 
     def _fix_host(self):

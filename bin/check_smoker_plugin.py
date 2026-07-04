@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 # Copyright (C) 2007-2013, GoodData(R) Corporation. All rights reserved
 
 """

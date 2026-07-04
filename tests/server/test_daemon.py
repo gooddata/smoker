@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # Copyright (C) 2007-2015, GoodData(R) Corporation. All rights reserved
 
 import copy
@@ -15,7 +13,7 @@ def generate_unique_file():
     return datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S-%f')
 
 
-class TestDaemon(object):
+class TestDaemon:
     """Unit tests for the load_config functions"""
     conf_dir = (os.path.dirname(os.path.realpath(__file__)) +
                 '/smoker_test_resources/smokerd')

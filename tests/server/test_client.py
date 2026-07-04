@@ -1,12 +1,11 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # Copyright (C) 2007-2015, GoodData(R) Corporation. All rights reserved
 
 import os
 import shutil
 import socket
 
-import mock
+from unittest import mock
+
 import pytest
 
 import smoker.client as smoker_client
@@ -18,7 +17,7 @@ from tests.server.smoker_test_resources.client_mock_result import (
 )
 
 
-class TestHost(object):
+class TestHost:
     """Unit tests for the client.Host class"""
 
     hostname = socket.gethostname()
@@ -96,7 +95,7 @@ class TestHost(object):
         assert expected_exc in repr(exc_info.value)
 
 
-class TestClient(object):
+class TestClient:
     """Unit tests for the client.Client class"""
 
     hostname = socket.gethostname()
@@ -258,7 +257,7 @@ class TestClient(object):
         assert result == expected
 
 
-class TestCleanUp(object):
+class TestCleanUp:
     """Clean up all temporary files used by Mock"""
     def test_clean_up(self):
         if os.path.exists(TMP_DIR):

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # Copyright (C) 2007-2013, GoodData(R) Corporation. All rights reserved
 
 """
@@ -31,7 +29,7 @@ tap = Tap()
 tap.add_test(tap_host1)
 
 # Dump result
-print tap.dump()
+print(tap.dump())
 
 # Output will be:
 # 1..1
@@ -45,7 +43,7 @@ print tap.dump()
 
 import re
 
-class Tap(object):
+class Tap:
     """
     Class to group TapTest objects
     """
@@ -94,7 +92,7 @@ class Tap(object):
 
         return '\n'.join(dump)
 
-class TapTest(object):
+class TapTest:
     """
     Single TAP test result
     """

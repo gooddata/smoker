@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright © 2007-2018, All rights reserved. GoodData® Corporation
 
 '''
