@@ -24,7 +24,7 @@ It executes configured plugins on request or periodically, unifies output and pr
 
 In this document, I will describe it's purpose and use-cases more deeply as well as I will show some useful examples to give you some tips how you could use it.
 
-Also it's free software, licensed under the terms of BSD license - feel free to contribute!
+Also it's free software, licensed under the terms of the BSD 3-Clause license - feel free to contribute!
 
 ## Purpose and use
 
@@ -52,17 +52,18 @@ Common use-cases in short:
 
 ### Dependencies
 
-Smoker is compatible and tested with Python 2.6.6 and newer.
+Smoker requires Python 3.9 or newer, and is built and tested on EL9+ and Fedora 43+.
 
-To build smoker with 'make rpm' folowing packages required to be installed on the CentOS, RHEL or Fedora:
+To build smoker with 'make rpm' following packages are required on EL9+ or Fedora:
 
-    yum install gcc rpm-build python-setproctitle python-flask-restful python2-setuptools
+    dnf install gcc rpm-build rpmdevtools redhat-rpm-config systemd-rpm-macros \
+        python3-devel python3-setuptools python3-pip python3-wheel pyproject-rpm-macros
 
 It doesn't have much dependencies, follow instructions bellow to install them:
 
 With PIP:
 
-    pip install psutil PyAML argparse setproctitle Flask-RESTful
+    pip install -r requirements.txt
 
 Or install packages from your distribution repository.
 
@@ -70,7 +71,7 @@ Or install packages from your distribution repository.
 
 With PIP (from Github):
 
-    pip install -e 'git://github.com/gooddata/smoker.git#egg=smoker'
+    pip install -e 'git+https://github.com/gooddata/smoker.git#egg=smoker'
 
 Or from Pypi (package is named gdc-smoker on Pypi):
 
@@ -294,21 +295,21 @@ If you want to make sure any change in Smoker won't affect your platform, you ca
 
 ### Test dependencies
 
-Unit tests on smoker require py.test
+Unit tests on smoker require pytest.
 
 With PIP:
 
-    pip install pytest lockfile mock
+    pip install -r requirements-test.txt
 
 ### Running tests
 
 Run unit test file with command:
 
-    py.test tests/server/test_*.py -vv
+    pytest tests/server/test_*.py -vv
 
 Or run all test files with command:
 
-    py.test
+    pytest
 
 pytest follows [standard test discovery](https://pytest.org/latest/goodpractices.html#conventions-for-python-test-discovery)
 
